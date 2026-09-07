@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>펜션 예약 현황</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>펜션 예약 현황</h1>
+    <div class="tabs" id="tabs"></div>
+  </header>
+
+  <div class="calendar-header">
+    <button id="prevMonth">&lt;</button>
+    <h2 id="monthLabel"></h2>
+    <button id="nextMonth">&gt;</button>
+    <button id="addBtn" class="primary">+ 새 예약</button>
+  </div>
+
+  <div class="calendar-grid" id="calendarGrid"></div>
+
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h3 id="modalTitle">예약 정보</h3>
+      <form id="reservationForm">
+        <input type="hidden" id="resId">
+
+        <label>예약자 이름
+          <input type="text" id="guestName" required>
+        </label>
+
+        <label>연락처
+          <input type="text" id="phone" placeholder="010-0000-0000">
+        </label>
+
+        <div class="row">
+          <label>체크인
+            <input type="date" id="checkIn" required>
+          </label>
+          <label>체크아웃
+            <input type="date" id="checkOut" required>
+          </label>
+        </div>
+
+        <label>인원
+          <input type="number" id="numGuests" min="1">
+        </label>
+
+        <div class="row">
+          <label>총 요금
+            <input type="number" id="totalPrice" min="0" step="1000">
+          </label>
+          <label>받은 금액
+            <input type="number" id="paidAmount" min="0" step="1000">
+          </label>
+        </div>
+
+        <div class="remaining">남은 금액: <span id="remainingAmount">0</span>원</div>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="bbqRequested"> 바베큐 요청
+        </label>
+
+        <label>메모
+          <textarea id="memo" rows="3"></textarea>
+        </label>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary">저장</button>
+          <button type="button" id="deleteBtn" class="danger hidden">삭제</button>
+          <button type="button" id="closeModal">닫기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

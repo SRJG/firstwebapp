@@ -6,7 +6,8 @@ const pensionsRouter = require('./routes/pensions');
 const reservationsRouter = require('./routes/reservations');
 
 const app = express();
-app.use(express.json()); // POST/PUT 요청의 JSON body 파싱
+app.use(express.json());
+app.use(express.static('public')); //
 
 // 서버 상태 확인용 기본 라우트
 app.get('/', (req, res) => {

@@ -1,7 +1,9 @@
 // db.js
-// PostgreSQL 연결 풀 - 프로젝트 전역에서 공유
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// PostgreSQL DATE 타입(oid 1082)을 시간대 변환 없이 'YYYY-MM-DD' 문자열 그대로 받기
+types.setTypeParser(1082, (val) => val);
 
 const pool = new Pool({
   host: process.env.DB_HOST,
