@@ -140,7 +140,16 @@ function openModal(reservation, presetDate) {
   } else {
     document.getElementById('modalTitle').textContent = '새 예약';
     document.getElementById('resId').value = '';
-    if (presetDate) document.getElementById('checkIn').value = presetDate;
+    if (presetDate) {
+      document.getElementById('checkIn').value = presetDate;
+
+      // 체크아웃 자동으로 다음 날 채우기 (change 이벤트 없이 값만 넣는 경우 대응)
+      const nextDay = new Date(presetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const checkOutInput = document.getElementById('checkOut');
+      checkOutInput.value = nextDay.toISOString().slice(0, 10);
+      checkOutInput.min = presetDate;
+    }
     deleteBtn.classList.add('hidden');
   }
 
