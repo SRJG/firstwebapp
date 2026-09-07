@@ -1,20 +1,12 @@
 // server.js
-// PostgreSQL(우분투 서버) 연결 테스트용 최소 웹서버
-
 require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
+const pool = require('./db');
+const pensionsRouter = require('./routes/pensions');
+const reservationsRouter = require('./routes/reservations');
 
 const app = express();
-
-// PostgreSQL 연결 풀 생성
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+app.use(express.json()); // POST/PUT 요청의 JSON body 파싱
 
 // 서버 상태 확인용 기본 라우트
 app.get('/', (req, res) => {
@@ -25,20 +17,16 @@ app.get('/', (req, res) => {
 app.get('/db-test', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW() AS current_time');
-    res.json({
-      success: true,
-      message: 'PostgreSQL 연결 성공!',
-      dbTime: result.rows[0].current_time,
-    });
+    res.json({ success: true, message: 'PostgreSQL 연결 성공!', dbTime: result.rows[0].current_time });
   } catch (err) {
     console.error('DB 연결 오류:', err.message);
-    res.status(500).json({
-      success: false,
-      message: 'PostgreSQL 연결 실패',
-      error: err.message,
-    });
+    res.status(500).json({ success: false, message: 'PostgreSQL 연결 실패', error: err.message });
   }
 });
+
+// API 라우터 연결
+app.use('/api/pensions', pensionsRouter);
+app.use('/api/reservations', reservationsRouter);
 
 // 서버 시작 시 DB 연결도 즉시 한 번 확인
 pool.connect()
