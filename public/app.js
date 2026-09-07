@@ -10,6 +10,24 @@ function parseNumber(str) {
   return Number(String(str).replace(/,/g, '')) || 0;
 }
 
+// 전화번호 자동 포맷 (010-0000-0000)
+function formatPhone(value) {
+  // 숫자만 남기기
+  let digits = value.replace(/\D/g, '');
+
+  // 010으로 시작하지 않으면 앞에 붙여줌
+  if (!digits.startsWith('010')) {
+    digits = '010' + digits;
+  }
+  digits = digits.slice(0, 11); // 010 + 8자리 = 최대 11자리
+
+  const rest = digits.slice(3); // 010 뒤 나머지 숫자
+  if (rest.length <= 4) {
+    return rest ? `010-${rest}` : '010-';
+  }
+  return `010-${rest.slice(0, 4)}-${rest.slice(4, 8)}`;
+}
+
 const state = {
   pensions: [],
   currentPensionId: null,
@@ -144,6 +162,7 @@ function openModal(reservation, presetDate) {
   } else {
     document.getElementById('modalTitle').textContent = '새 예약';
     document.getElementById('resId').value = '';
+    document.getElementById('phone').value = '010-';
     deleteBtn.classList.add('hidden');
 
     if (presetDate) {
@@ -184,6 +203,20 @@ document.getElementById('closeModal').onclick = () => modalOverlay.classList.add
     const paid = parseNumber(document.getElementById('paidAmount').value);
     document.getElementById('remainingAmount').textContent = formatNumber(total - paid);
   });
+});
+
+// 전화번호 입력 시 자동 하이픈 포맷
+const phoneInput = document.getElementById('phone');
+phoneInput.addEventListener('input', () => {
+  const formatted = formatPhone(phoneInput.value);
+  phoneInput.value = formatted;
+  phoneInput.setSelectionRange(formatted.length, formatted.length);
+});
+phoneInput.addEventListener('focus', () => {
+  if (!phoneInput.value) {
+    phoneInput.value = '010-';
+    phoneInput.setSelectionRange(4, 4);
+  }
 });
 
 // ---- 날짜 범위 선택기 (커스텀 미니 캘린더) ----
