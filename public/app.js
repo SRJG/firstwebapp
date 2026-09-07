@@ -128,8 +128,6 @@ function openModal(reservation, presetDate) {
     document.getElementById('resId').value = reservation.id;
     document.getElementById('guestName').value = reservation.guest_name;
     document.getElementById('phone').value = reservation.phone || '';
-    document.getElementById('checkIn').value = reservation.check_in;
-    document.getElementById('checkOut').value = reservation.check_out;
     document.getElementById('numGuests').value = reservation.num_guests || '';
     document.getElementById('totalPrice').value = formatNumber(reservation.total_price);
     document.getElementById('paidAmount').value = formatNumber(reservation.paid_amount);
@@ -137,22 +135,36 @@ function openModal(reservation, presetDate) {
     document.getElementById('memo').value = reservation.memo || '';
     document.getElementById('remainingAmount').textContent = formatNumber(reservation.remaining_amount);
     deleteBtn.classList.remove('hidden');
+
+    pickerState.selectingCheckIn = reservation.check_in;
+    pickerState.selectingCheckOut = reservation.check_out;
+    const [y, m] = reservation.check_in.split('-').map(Number);
+    pickerState.year = y;
+    pickerState.month = m;
   } else {
     document.getElementById('modalTitle').textContent = '새 예약';
     document.getElementById('resId').value = '';
-    if (presetDate) {
-      document.getElementById('checkIn').value = presetDate;
+    deleteBtn.classList.add('hidden');
 
-      // 체크아웃 자동으로 다음 날 채우기 (change 이벤트 없이 값만 넣는 경우 대응)
+    if (presetDate) {
       const nextDay = new Date(presetDate);
       nextDay.setDate(nextDay.getDate() + 1);
-      const checkOutInput = document.getElementById('checkOut');
-      checkOutInput.value = nextDay.toISOString().slice(0, 10);
-      checkOutInput.min = presetDate;
+      pickerState.selectingCheckIn = presetDate;
+      pickerState.selectingCheckOut = nextDay.toISOString().slice(0, 10);
+      const [y, m] = presetDate.split('-').map(Number);
+      pickerState.year = y;
+      pickerState.month = m;
+    } else {
+      pickerState.selectingCheckIn = null;
+      pickerState.selectingCheckOut = null;
+      const today = new Date();
+      pickerState.year = today.getFullYear();
+      pickerState.month = today.getMonth() + 1;
     }
-    deleteBtn.classList.add('hidden');
   }
 
+  syncPickerToForm();
+  renderPicker();
   modalOverlay.classList.remove('hidden');
 }
 
@@ -174,32 +186,116 @@ document.getElementById('closeModal').onclick = () => modalOverlay.classList.add
   });
 });
 
-// 체크인 날짜 선택 시 체크아웃을 자동으로 다음 날로 채워줌 (혼동 방지)
-document.getElementById('checkIn').addEventListener('change', (e) => {
-  const checkOutInput = document.getElementById('checkOut');
-  const checkInDate = new Date(e.target.value);
-  checkOutInput.min = e.target.value; // 체크인보다 이전 날짜 선택 방지
+// ---- 날짜 범위 선택기 (커스텀 미니 캘린더) ----
+const pickerState = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth() + 1,
+  selectingCheckIn: null,
+  selectingCheckOut: null,
+};
 
-  // 체크아웃이 비어있거나 체크인보다 빠르면 자동으로 다음 날로 설정
-  if (!checkOutInput.value || checkOutInput.value <= e.target.value) {
-    checkInDate.setDate(checkInDate.getDate() + 1);
-    checkOutInput.value = checkInDate.toISOString().slice(0, 10);
+const pickerGrid = document.getElementById('pickerGrid');
+const pickerMonthLabel = document.getElementById('pickerMonthLabel');
+const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+
+function toDateStr(y, m, d) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function renderPicker() {
+  pickerMonthLabel.textContent = `${pickerState.year}년 ${pickerState.month}월`;
+  pickerGrid.innerHTML = '';
+
+  const firstDay = new Date(pickerState.year, pickerState.month - 1, 1);
+  const daysInMonth = new Date(pickerState.year, pickerState.month, 0).getDate();
+  const startWeekday = firstDay.getDay();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  for (let i = 0; i < startWeekday; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'picker-cell empty';
+    pickerGrid.appendChild(empty);
   }
-});
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = toDateStr(pickerState.year, pickerState.month, d);
+    const cell = document.createElement('div');
+    cell.className = 'picker-cell';
+    cell.textContent = d;
+
+    const isPast = dateStr < todayStr;
+    if (isPast) cell.classList.add('past');
+
+    const { selectingCheckIn: ci, selectingCheckOut: co } = pickerState;
+    if (ci && dateStr === ci) cell.classList.add('range-start');
+    if (co && dateStr === co) cell.classList.add('range-end');
+    if (ci && co && dateStr > ci && dateStr < co) cell.classList.add('range-mid');
+
+    if (!isPast) {
+      cell.onclick = () => onPickerDateClick(dateStr);
+    }
+    pickerGrid.appendChild(cell);
+  }
+}
+
+function onPickerDateClick(dateStr) {
+  const { selectingCheckIn: ci, selectingCheckOut: co } = pickerState;
+
+  if (!ci || (ci && co) || dateStr <= ci) {
+    // 새로 시작하거나, 체크인보다 이전/같은 날을 누르면 체크인 다시 설정
+    pickerState.selectingCheckIn = dateStr;
+    pickerState.selectingCheckOut = null;
+  } else {
+    // 체크인이 있고 체크아웃이 없는 상태에서, 체크인보다 늦은 날 클릭 → 체크아웃 확정
+    pickerState.selectingCheckOut = dateStr;
+  }
+
+  syncPickerToForm();
+  renderPicker();
+}
+
+function syncPickerToForm() {
+  const { selectingCheckIn: ci, selectingCheckOut: co } = pickerState;
+  document.getElementById('checkIn').value = ci || '';
+  document.getElementById('checkOut').value = co || '';
+
+  if (ci && co) {
+    dateRangeDisplay.textContent = `${ci} ~ ${co}`;
+  } else if (ci) {
+    dateRangeDisplay.textContent = `${ci} ~ (체크아웃 날짜를 선택하세요)`;
+  } else {
+    dateRangeDisplay.textContent = '체크인 날짜를 선택하세요';
+  }
+}
+
+document.getElementById('pickerPrevMonth').onclick = () => {
+  pickerState.month -= 1;
+  if (pickerState.month < 1) { pickerState.month = 12; pickerState.year -= 1; }
+  renderPicker();
+};
+document.getElementById('pickerNextMonth').onclick = () => {
+  pickerState.month += 1;
+  if (pickerState.month > 12) { pickerState.month = 1; pickerState.year += 1; }
+  renderPicker();
+};
 
 // ---- 저장 (등록 or 수정) ----
 form.onsubmit = async (e) => {
   
   e.preventDefault();
 
-  const checkIn = document.getElementById('checkIn').value;
-  const checkOut = document.getElementById('checkOut').value;
-    if (checkOut <= checkIn) {
-      alert('체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.');
-      return;
-    }
+const checkIn = document.getElementById('checkIn').value;
+const checkOut = document.getElementById('checkOut').value;
+if (!checkIn || !checkOut) {
+  alert('체크인과 체크아웃 날짜를 모두 선택해주세요.');
+  return;
+}
+if (checkOut <= checkIn) {
+  alert('체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.');
+  return;
+}
 
-  const id = document.getElementById('resId').value;
+const id = document.getElementById('resId').value;
   
   const payload = {
     pension_id: state.currentPensionId,

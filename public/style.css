@@ -116,3 +116,54 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .remaining { margin-bottom: 12px; font-weight: bold; color: #d9480f; }
 .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 .modal-actions button { flex: 1; padding: 10px; border-radius: 6px; cursor: pointer; }
+
+.date-picker-section { margin-bottom: 12px; }
+.date-picker-section > label:first-child {
+  display: block; margin-bottom: 6px; font-size: 13px; color: #555;
+}
+.date-range-display {
+  background: #f0f4ff;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #333;
+}
+.mini-calendar { border: 1px solid #eee; border-radius: 8px; padding: 8px; }
+.mini-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.mini-calendar-header button {
+  border: none;
+  background: #f0f0f0;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.picker-cell {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.picker-cell.empty { cursor: default; }
+.picker-cell.past { color: #ccc; cursor: not-allowed; }
+.picker-cell.range-start, .picker-cell.range-end {
+  background: #4a7cff;
+  color: white;
+  font-weight: bold;
+}
+.picker-cell.range-mid { background: #d6e4ff; border-radius: 0; }
+.picker-cell.range-start { border-radius: 4px 0 0 4px; }
+.picker-cell.range-end { border-radius: 0 4px 4px 0; }

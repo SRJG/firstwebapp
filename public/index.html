@@ -35,13 +35,19 @@
           <input type="text" id="phone" placeholder="010-0000-0000">
         </label>
 
-        <div class="row">
-          <label>체크인
-            <input type="date" id="checkIn" required>
-          </label>
-          <label>체크아웃
-            <input type="date" id="checkOut" required>
-          </label>
+        <div class="date-picker-section">
+          <label>숙박 기간</label>
+          <div class="date-range-display" id="dateRangeDisplay">체크인 날짜를 선택하세요</div>
+          <div class="mini-calendar">
+            <div class="mini-calendar-header">
+              <button type="button" id="pickerPrevMonth">&lt;</button>
+              <span id="pickerMonthLabel"></span>
+              <button type="button" id="pickerNextMonth">&gt;</button>
+            </div>
+            <div class="mini-calendar-grid" id="pickerGrid"></div>
+          </div>
+          <input type="hidden" id="checkIn" required>
+          <input type="hidden" id="checkOut" required>
         </div>
 
         <label>인원
