@@ -1,4 +1,15 @@
 // public/app.js
+
+// 숫자 ↔ 쉼표 포맷 변환 헬퍼
+function formatNumber(n) {
+  if (n === '' || n === null || n === undefined) return '';
+  return Number(n).toLocaleString('ko-KR');
+}
+function parseNumber(str) {
+  if (!str) return 0;
+  return Number(String(str).replace(/,/g, '')) || 0;
+}
+
 const state = {
   pensions: [],
   currentPensionId: null,
@@ -120,11 +131,11 @@ function openModal(reservation, presetDate) {
     document.getElementById('checkIn').value = reservation.check_in;
     document.getElementById('checkOut').value = reservation.check_out;
     document.getElementById('numGuests').value = reservation.num_guests || '';
-    document.getElementById('totalPrice').value = reservation.total_price;
-    document.getElementById('paidAmount').value = reservation.paid_amount;
+    document.getElementById('totalPrice').value = formatNumber(reservation.total_price);
+    document.getElementById('paidAmount').value = formatNumber(reservation.paid_amount);
     document.getElementById('bbqRequested').checked = reservation.bbq_requested;
     document.getElementById('memo').value = reservation.memo || '';
-    document.getElementById('remainingAmount').textContent = reservation.remaining_amount;
+    document.getElementById('remainingAmount').textContent = formatNumber(reservation.remaining_amount);
     deleteBtn.classList.remove('hidden');
   } else {
     document.getElementById('modalTitle').textContent = '새 예약';
@@ -139,20 +150,48 @@ function openModal(reservation, presetDate) {
 document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('closeModal').onclick = () => modalOverlay.classList.add('hidden');
 
-// 총액/받은 금액 바뀔 때 남은 금액 실시간 계산
+// 총액/받은 금액 입력 시 쉼표 자동 포맷 + 남은 금액 실시간 계산
 ['totalPrice', 'paidAmount'].forEach((id) => {
-  document.getElementById(id).addEventListener('input', () => {
-    const total = Number(document.getElementById('totalPrice').value) || 0;
-    const paid = Number(document.getElementById('paidAmount').value) || 0;
-    document.getElementById('remainingAmount').textContent = total - paid;
+  const input = document.getElementById(id);
+  input.addEventListener('input', () => {
+    const raw = parseNumber(input.value);
+    input.value = formatNumber(raw);
+    // 커서를 항상 끝으로 이동 (쉼표 추가로 인한 커서 튐 방지)
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    const total = parseNumber(document.getElementById('totalPrice').value);
+    const paid = parseNumber(document.getElementById('paidAmount').value);
+    document.getElementById('remainingAmount').textContent = formatNumber(total - paid);
   });
+});
+
+// 체크인 날짜 선택 시 체크아웃을 자동으로 다음 날로 채워줌 (혼동 방지)
+document.getElementById('checkIn').addEventListener('change', (e) => {
+  const checkOutInput = document.getElementById('checkOut');
+  const checkInDate = new Date(e.target.value);
+  checkOutInput.min = e.target.value; // 체크인보다 이전 날짜 선택 방지
+
+  // 체크아웃이 비어있거나 체크인보다 빠르면 자동으로 다음 날로 설정
+  if (!checkOutInput.value || checkOutInput.value <= e.target.value) {
+    checkInDate.setDate(checkInDate.getDate() + 1);
+    checkOutInput.value = checkInDate.toISOString().slice(0, 10);
+  }
 });
 
 // ---- 저장 (등록 or 수정) ----
 form.onsubmit = async (e) => {
+  
   e.preventDefault();
-  const id = document.getElementById('resId').value;
 
+  const checkIn = document.getElementById('checkIn').value;
+  const checkOut = document.getElementById('checkOut').value;
+    if (checkOut <= checkIn) {
+      alert('체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.');
+      return;
+    }
+
+  const id = document.getElementById('resId').value;
+  
   const payload = {
     pension_id: state.currentPensionId,
     guest_name: document.getElementById('guestName').value,
@@ -160,8 +199,8 @@ form.onsubmit = async (e) => {
     check_in: document.getElementById('checkIn').value,
     check_out: document.getElementById('checkOut').value,
     num_guests: Number(document.getElementById('numGuests').value) || null,
-    total_price: Number(document.getElementById('totalPrice').value) || 0,
-    paid_amount: Number(document.getElementById('paidAmount').value) || 0,
+    total_price: parseNumber(document.getElementById('totalPrice').value),
+    paid_amount: parseNumber(document.getElementById('paidAmount').value),
     bbq_requested: document.getElementById('bbqRequested').checked,
     memo: document.getElementById('memo').value,
   };

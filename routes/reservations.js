@@ -58,11 +58,17 @@ router.post('/', async (req, res) => {
   } = req.body;
 
   if (!pension_id || !guest_name || !check_in || !check_out) {
-    return res.status(400).json({
-      success: false,
-      message: 'pension_id, guest_name, check_in, check_out은 필수입니다.',
-    });
-  }
+  return res.status(400).json({
+    success: false,
+    message: 'pension_id, guest_name, check_in, check_out은 필수입니다.',
+  });
+}
+if (check_out <= check_in) {
+  return res.status(400).json({
+    success: false,
+    message: '체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.',
+  });
+}
 
   try {
     const result = await pool.query(
