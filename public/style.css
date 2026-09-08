@@ -73,6 +73,11 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   cursor: pointer;
   font-size: 13px;
 }
+.price-mode-panel button.primary {
+  background: #4a7cff;
+  color: white;
+  border: none;
+}
 
 .weekday-row {
   display: grid;
