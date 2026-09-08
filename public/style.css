@@ -40,6 +40,40 @@ header h1 { margin: 0 0 12px; font-size: 22px; }
 button.primary { background: #4a7cff; color: white; border: none; }
 button.danger { background: #ff4a4a; color: white; border: none; }
 
+#priceModeBtn.active {
+  background: #4a7cff;
+  color: white;
+  border-color: #4a7cff;
+}
+
+.price-mode-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7de;
+  border: 1px solid #f0c419;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.price-mode-panel.hidden { display: none; }
+.price-mode-panel input {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 130px;
+  font-size: 13px;
+}
+.price-mode-panel button {
+  padding: 7px 14px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 .weekday-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -75,7 +109,17 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 }
 .day-cell:hover { border-color: #4a7cff; }
 .day-cell.empty { background: transparent; border: none; cursor: default; }
+.day-cell.price-selected {
+  outline: 2px solid #4a7cff;
+  outline-offset: -2px;
+  background: #eaf0ff;
+}
 .day-number { font-weight: bold; margin-bottom: 4px; }
+.day-rate {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 2px;
+}
 .reservation-tag {
   background: #d6e4ff;
   border-radius: 4px;

@@ -4,6 +4,7 @@ const express = require('express');
 const pool = require('./db');
 const pensionsRouter = require('./routes/pensions');
 const reservationsRouter = require('./routes/reservations');
+const dailyRatesRouter = require('./routes/dailyRates');
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,7 @@ app.get('/db-test', async (req, res) => {
 // API 라우터 연결
 app.use('/api/pensions', pensionsRouter);
 app.use('/api/reservations', reservationsRouter);
+app.use('/api/daily-rates', dailyRatesRouter);
 
 // 서버 시작 시 DB 연결도 즉시 한 번 확인
 pool.connect()

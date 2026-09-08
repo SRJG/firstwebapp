@@ -46,7 +46,21 @@ async function migrate() {
     `);
     console.log('✅ reservations 테이블 확인/생성 완료');
 
-    // 3) 펜션 3곳 초기 데이터 삽입 (이미 있으면 건너뜀)
+    // 3) daily_rates 테이블 (펜션별 날짜별 1박 요금)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS daily_rates (
+        id SERIAL PRIMARY KEY,
+        pension_id INTEGER NOT NULL REFERENCES pensions(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        price INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (pension_id, date)
+      );
+    `);
+    console.log('✅ daily_rates 테이블 확인/생성 완료');
+
+    // 4) 펜션 3곳 초기 데이터 삽입 (이미 있으면 건너뜀)
     await client.query(`
       INSERT INTO pensions (name) VALUES
         ('사랑채'),

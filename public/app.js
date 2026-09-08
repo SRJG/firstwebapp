@@ -34,7 +34,11 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1, // 1~12
   reservations: [],
+  dailyRates: {}, // { 'YYYY-MM-DD': price } - 현재 화면에 보이는 달의 날짜별 요금
 };
+
+// 예약 등록/수정 모달이 "신규 등록"인지 여부 (신규일 때만 요금 자동 채우기 동작)
+let isCreatingNew = true;
 
 const tabsEl = document.getElementById('tabs');
 const gridEl = document.getElementById('calendarGrid');
@@ -61,18 +65,30 @@ function renderTabs() {
     btn.onclick = () => {
       state.currentPensionId = p.id;
       renderTabs();
+      exitPriceMode();
       loadCalendar();
     };
     tabsEl.appendChild(btn);
   });
 }
 
-// ---- 달력 데이터 로드 ----
+// ---- 달력 데이터 로드 (예약 + 날짜별 요금) ----
 async function loadCalendar() {
   monthLabelEl.textContent = `${state.year}년 ${state.month}월`;
-  const url = `/api/reservations?pension_id=${state.currentPensionId}&year=${state.year}&month=${state.month}`;
-  const res = await fetch(url);
-  state.reservations = await res.json();
+
+  const resvUrl = `/api/reservations?pension_id=${state.currentPensionId}&year=${state.year}&month=${state.month}`;
+  const resvRes = await fetch(resvUrl);
+  state.reservations = await resvRes.json();
+
+  const monthStart = `${state.year}-${String(state.month).padStart(2, '0')}-01`;
+  const lastDay = new Date(state.year, state.month, 0).getDate();
+  const monthEnd = `${state.year}-${String(state.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const ratesUrl = `/api/daily-rates?pension_id=${state.currentPensionId}&start=${monthStart}&end=${monthEnd}`;
+  const ratesRes = await fetch(ratesUrl);
+  const rates = await ratesRes.json();
+  state.dailyRates = {};
+  rates.forEach((r) => { state.dailyRates[r.date] = r.price; });
+
   renderGrid();
 }
 
@@ -93,11 +109,22 @@ function renderGrid() {
     const dateStr = `${state.year}-${String(state.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const cell = document.createElement('div');
     cell.className = 'day-cell';
+    if (priceMode.active && priceMode.selectedDates.has(dateStr)) {
+      cell.classList.add('price-selected');
+    }
 
     const dayNum = document.createElement('div');
     dayNum.className = 'day-number';
     dayNum.textContent = d;
     cell.appendChild(dayNum);
+
+    // 저장된 날짜별 요금이 있으면 작은 텍스트로 표시
+    if (state.dailyRates[dateStr] !== undefined) {
+      const rateEl = document.createElement('div');
+      rateEl.className = 'day-rate';
+      rateEl.textContent = `₩${formatNumber(state.dailyRates[dateStr])}`;
+      cell.appendChild(rateEl);
+    }
 
     // 이 날짜가 포함된 예약 찾기 (check_in <= date < check_out)
     const matches = state.reservations.filter(
@@ -110,13 +137,18 @@ function renderGrid() {
       tag.textContent = r.guest_name;
       tag.onclick = (e) => {
         e.stopPropagation();
+        if (priceMode.active) return; // 요금 입력 모드 중엔 예약 상세를 열지 않음
         openModal(r);
       };
       cell.appendChild(tag);
     });
 
-    // 빈 날짜 클릭 시 새 예약 등록 (해당 날짜를 체크인으로)
     cell.onclick = () => {
+      if (priceMode.active) {
+        togglePriceSelect(dateStr, cell);
+        return;
+      }
+      // 빈 날짜 클릭 시 새 예약 등록 (해당 날짜를 체크인으로)
       if (matches.length === 0) openModal(null, dateStr);
     };
 
@@ -136,10 +168,91 @@ document.getElementById('nextMonth').onclick = () => {
   loadCalendar();
 };
 
+// ---- 요금 입력 모드 ----
+const priceMode = {
+  active: false,
+  selectedDates: new Set(),
+};
+
+const priceModeBtn = document.getElementById('priceModeBtn');
+const priceModePanel = document.getElementById('priceModePanel');
+const priceModeInfo = document.getElementById('priceModeInfo');
+const priceModeInput = document.getElementById('priceModeInput');
+const priceModeApplyBtn = document.getElementById('priceModeApply');
+const priceModeCancelBtn = document.getElementById('priceModeCancel');
+
+function exitPriceMode() {
+  priceMode.active = false;
+  priceMode.selectedDates.clear();
+  priceModeBtn.classList.remove('active');
+  priceModePanel.classList.add('hidden');
+  priceModeInput.value = '';
+  priceModeInfo.textContent = '0일 선택됨';
+  renderGrid();
+}
+
+priceModeBtn.onclick = () => {
+  if (priceMode.active) {
+    exitPriceMode();
+    return;
+  }
+  priceMode.active = true;
+  priceModeBtn.classList.add('active');
+  priceModePanel.classList.remove('hidden');
+  priceModeInfo.textContent = '0일 선택됨';
+};
+
+priceModeCancelBtn.onclick = exitPriceMode;
+
+function togglePriceSelect(dateStr, cell) {
+  if (priceMode.selectedDates.has(dateStr)) {
+    priceMode.selectedDates.delete(dateStr);
+    cell.classList.remove('price-selected');
+  } else {
+    priceMode.selectedDates.add(dateStr);
+    cell.classList.add('price-selected');
+  }
+  priceModeInfo.textContent = `${priceMode.selectedDates.size}일 선택됨`;
+}
+
+priceModeInput.addEventListener('input', () => {
+  const raw = parseNumber(priceModeInput.value);
+  priceModeInput.value = formatNumber(raw);
+  priceModeInput.setSelectionRange(priceModeInput.value.length, priceModeInput.value.length);
+});
+
+priceModeApplyBtn.onclick = async () => {
+  if (priceMode.selectedDates.size === 0) {
+    alert('요금을 적용할 날짜를 먼저 선택해주세요.');
+    return;
+  }
+  const price = parseNumber(priceModeInput.value);
+  if (!price) {
+    alert('요금을 입력해주세요.');
+    return;
+  }
+
+  const dates = Array.from(priceMode.selectedDates);
+  const res = await fetch('/api/daily-rates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pension_id: state.currentPensionId, dates, price }),
+  });
+
+  if (res.ok) {
+    exitPriceMode();
+    loadCalendar();
+  } else {
+    alert('요금 저장 실패. 콘솔을 확인해주세요.');
+    console.error(await res.text());
+  }
+};
+
 // ---- 모달 ----
 function openModal(reservation, presetDate) {
   form.reset();
   document.getElementById('remainingAmount').textContent = '0';
+  isCreatingNew = !reservation;
 
   if (reservation) {
     document.getElementById('modalTitle').textContent = '예약 상세';
@@ -184,6 +297,7 @@ function openModal(reservation, presetDate) {
 
   syncPickerToForm();
   renderPicker();
+  updateDefaultPriceIfApplicable();
   modalOverlay.classList.remove('hidden');
 }
 
@@ -285,6 +399,7 @@ function onPickerDateClick(dateStr) {
 
   syncPickerToForm();
   renderPicker();
+  updateDefaultPriceIfApplicable();
 }
 
 function syncPickerToForm() {
@@ -298,6 +413,34 @@ function syncPickerToForm() {
     dateRangeDisplay.textContent = `${ci} ~ (체크아웃 날짜를 선택하세요)`;
   } else {
     dateRangeDisplay.textContent = '체크인 날짜를 선택하세요';
+  }
+}
+
+// 체크인/체크아웃이 모두 정해지면, 신규 예약에 한해 저장된 날짜별 요금을 합산해
+// "총 요금" 칸에 기본값으로 채워준다. (기존 예약 수정 중에는 건드리지 않음)
+async function updateDefaultPriceIfApplicable() {
+  if (!isCreatingNew) return;
+  const { selectingCheckIn: ci, selectingCheckOut: co } = pickerState;
+  if (!ci || !co) return;
+
+  try {
+    const res = await fetch(`/api/daily-rates?pension_id=${state.currentPensionId}&start=${ci}&end=${co}`);
+    if (!res.ok) return;
+    const rates = await res.json();
+
+    // check_out 당일은 숙박하지 않는 퇴실일이므로 합산에서 제외
+    const nightlyTotal = rates
+      .filter((r) => r.date < co)
+      .reduce((sum, r) => sum + r.price, 0);
+
+    if (nightlyTotal > 0) {
+      const totalInput = document.getElementById('totalPrice');
+      totalInput.value = formatNumber(nightlyTotal);
+      const paid = parseNumber(document.getElementById('paidAmount').value);
+      document.getElementById('remainingAmount').textContent = formatNumber(nightlyTotal - paid);
+    }
+  } catch (err) {
+    console.error('기본 요금 계산 실패:', err);
   }
 }
 
