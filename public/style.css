@@ -40,6 +40,24 @@ header h1 { margin: 0 0 12px; font-size: 22px; }
 button.primary { background: #4a7cff; color: white; border: none; }
 button.danger { background: #ff4a4a; color: white; border: none; }
 
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.weekday {
+  background: #e9ecf3;
+  border-radius: 6px;
+  padding: 6px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: bold;
+  color: #555;
+}
+.weekday.sun { color: #e0483f; }
+.weekday.sat { color: #3f6fe0; }
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

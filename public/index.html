@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>펜션 예약 현황</title>
+<title>펜션 예약 관리</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>펜션 예약 현황</h1>
+    <h1>펜션 예약 관리</h1>
     <div class="tabs" id="tabs"></div>
   </header>
 
@@ -17,6 +17,16 @@
     <h2 id="monthLabel"></h2>
     <button id="nextMonth">&gt;</button>
     <button id="addBtn" class="primary">+ 새 예약</button>
+  </div>
+
+  <div class="weekday-row">
+    <div class="weekday sun">일</div>
+    <div class="weekday">월</div>
+    <div class="weekday">화</div>
+    <div class="weekday">수</div>
+    <div class="weekday">목</div>
+    <div class="weekday">금</div>
+    <div class="weekday sat">토</div>
   </div>
 
   <div class="calendar-grid" id="calendarGrid"></div>
