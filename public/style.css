@@ -1,4 +1,5 @@
 * { box-sizing: border-box; }
+.hidden { display: none !important; }
 body {
   font-family: -apple-system, "Malgun Gothic", sans-serif;
   margin: 0;
@@ -57,7 +58,6 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   margin-bottom: 12px;
   font-size: 13px;
 }
-.price-mode-panel.hidden { display: none; }
 .price-mode-panel input {
   padding: 7px 10px;
   border: 1px solid #ddd;
@@ -142,7 +142,6 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   background: rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center;
 }
-.modal-overlay.hidden { display: none; }
 .modal {
   background: white;
   border-radius: 12px;
@@ -234,3 +233,40 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .picker-cell.range-mid { background: #d6e4ff; border-radius: 0; }
 .picker-cell.range-start { border-radius: 4px 0 0 4px; }
 .picker-cell.range-end { border-radius: 0 4px 4px 0; }
+
+/* ===== 모바일 반응형 (~480px) ===== */
+@media (max-width: 480px) {
+  body { padding: 10px; }
+  header h1 { font-size: 18px; }
+
+  .tabs { flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tabs button { padding: 8px 14px; font-size: 13px; }
+
+  .calendar-header { flex-wrap: wrap; gap: 8px; }
+  .calendar-header h2 {
+    flex: 1 1 100%;
+    order: -1;
+    font-size: 16px;
+  }
+  .calendar-header button { padding: 7px 10px; font-size: 13px; }
+  #addBtn, #priceModeBtn { flex: 1; }
+
+  .price-mode-panel { flex-wrap: wrap; }
+  .price-mode-panel input { width: auto; flex: 1; min-width: 80px; }
+
+  .weekday-row, .calendar-grid { gap: 3px; }
+  .weekday { font-size: 11px; padding: 4px 0; }
+  .day-cell { min-height: 56px; padding: 2px; font-size: 11px; border-radius: 6px; }
+  .day-number { margin-bottom: 2px; }
+  .day-rate { font-size: 8px; letter-spacing: -0.3px; }
+  .reservation-tag { font-size: 10px; padding: 1px 3px; }
+
+  .modal { width: min(360px, 92vw); padding: 18px; }
+  .row { flex-direction: column; gap: 0; }
+}
+
+@media (max-width: 360px) {
+  .weekday-row, .calendar-grid { gap: 2px; }
+  .day-cell { padding: 1px; }
+  .day-rate { font-size: 7px; }
+}
