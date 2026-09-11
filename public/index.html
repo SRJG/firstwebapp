@@ -16,7 +16,7 @@
     <button id="prevMonth">&lt;</button>
     <h2 id="monthLabel"></h2>
     <button id="nextMonth">&gt;</button>
-    <button id="addBtn" class="primary">+ 새 예약</button>
+    <button id="viewToggleBtn" class="primary">예약 보기</button>
     <button id="priceModeBtn">요금 입력</button>
   </div>
 
@@ -27,17 +27,35 @@
     <button id="priceModeCancel">취소</button>
   </div>
 
-  <div class="weekday-row">
-    <div class="weekday sun">일</div>
-    <div class="weekday">월</div>
-    <div class="weekday">화</div>
-    <div class="weekday">수</div>
-    <div class="weekday">목</div>
-    <div class="weekday">금</div>
-    <div class="weekday sat">토</div>
+  <div id="calendarView">
+    <div class="weekday-row">
+      <div class="weekday sun">일</div>
+      <div class="weekday">월</div>
+      <div class="weekday">화</div>
+      <div class="weekday">수</div>
+      <div class="weekday">목</div>
+      <div class="weekday">금</div>
+      <div class="weekday sat">토</div>
+    </div>
+
+    <div class="calendar-grid" id="calendarGrid"></div>
   </div>
 
-  <div class="calendar-grid" id="calendarGrid"></div>
+  <div id="listView" class="hidden">
+    <table class="reservation-table">
+      <thead>
+        <tr>
+          <th>예약자</th>
+          <th>기간</th>
+          <th>연락처</th>
+          <th>인원</th>
+          <th>총 요금</th>
+          <th>남은 금액</th>
+        </tr>
+      </thead>
+      <tbody id="listViewBody"></tbody>
+    </table>
+  </div>
 
   <div id="modalOverlay" class="modal-overlay hidden">
     <div class="modal">

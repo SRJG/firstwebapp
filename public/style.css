@@ -234,6 +234,33 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .picker-cell.range-start { border-radius: 4px 0 0 4px; }
 .picker-cell.range-end { border-radius: 0 4px 4px 0; }
 
+.reservation-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+}
+.reservation-table th, .reservation-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+.reservation-table th {
+  background: #e9ecf3;
+  font-size: 13px;
+  color: #555;
+}
+.reservation-table tbody tr { cursor: pointer; }
+.reservation-table tbody tr:hover { background: #f0f4ff; }
+.reservation-table td.list-empty {
+  text-align: center;
+  color: #999;
+  padding: 30px 0;
+  cursor: default;
+}
+
 /* ===== 모바일 반응형 (~480px) ===== */
 @media (max-width: 480px) {
   body { padding: 10px; }
@@ -249,7 +276,10 @@ button.danger { background: #ff4a4a; color: white; border: none; }
     font-size: 16px;
   }
   .calendar-header button { padding: 7px 10px; font-size: 13px; }
-  #addBtn, #priceModeBtn { flex: 1; }
+  #viewToggleBtn, #priceModeBtn { flex: 1; }
+
+  .reservation-table { font-size: 12px; }
+  .reservation-table th, .reservation-table td { padding: 7px 6px; }
 
   .price-mode-panel { flex-wrap: wrap; }
   .price-mode-panel input { width: auto; flex: 1; min-width: 80px; }

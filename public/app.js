@@ -35,6 +35,7 @@ const state = {
   month: new Date().getMonth() + 1, // 1~12
   reservations: [],
   dailyRates: {}, // { 'YYYY-MM-DD': price } - 현재 화면에 보이는 달의 날짜별 요금
+  viewMode: 'calendar', // 'calendar' | 'list'
 };
 
 // 예약 등록/수정 모달이 "신규 등록"인지 여부 (신규일 때만 요금 자동 채우기 동작)
@@ -90,6 +91,7 @@ async function loadCalendar() {
   rates.forEach((r) => { state.dailyRates[r.date] = r.price; });
 
   renderGrid();
+  if (state.viewMode === 'list') renderListView();
 }
 
 function renderGrid() {
@@ -301,8 +303,51 @@ function openModal(reservation, presetDate) {
   modalOverlay.classList.remove('hidden');
 }
 
-document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('closeModal').onclick = () => modalOverlay.classList.add('hidden');
+
+// ---- 화면 전환 (달력 ↔ 예약 목록) ----
+const calendarViewEl = document.getElementById('calendarView');
+const listViewEl = document.getElementById('listView');
+const listViewBody = document.getElementById('listViewBody');
+const viewToggleBtn = document.getElementById('viewToggleBtn');
+
+function renderListView() {
+  listViewBody.innerHTML = '';
+
+  if (state.reservations.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="6" class="list-empty">이번 달 예약이 없습니다.</td>';
+    listViewBody.appendChild(tr);
+    return;
+  }
+
+  const sorted = [...state.reservations].sort((a, b) => a.check_in.localeCompare(b.check_in));
+  sorted.forEach((r) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.guest_name}${r.bbq_requested ? ' 🔥' : ''}</td>
+      <td>${r.check_in} ~ ${r.check_out}</td>
+      <td>${r.phone || '-'}</td>
+      <td>${r.num_guests || '-'}</td>
+      <td>₩${formatNumber(r.total_price)}</td>
+      <td>₩${formatNumber(r.remaining_amount)}</td>
+    `;
+    tr.onclick = () => openModal(r);
+    listViewBody.appendChild(tr);
+  });
+}
+
+viewToggleBtn.onclick = () => {
+  state.viewMode = state.viewMode === 'calendar' ? 'list' : 'calendar';
+  if (state.viewMode === 'list') {
+    calendarViewEl.classList.add('hidden');
+    listViewEl.classList.remove('hidden');
+    renderListView();
+  } else {
+    calendarViewEl.classList.remove('hidden');
+    listViewEl.classList.add('hidden');
+  }
+};
 
 // 총액/받은 금액 입력 시 쉼표 자동 포맷 + 남은 금액 실시간 계산
 ['totalPrice', 'paidAmount'].forEach((id) => {
