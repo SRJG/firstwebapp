@@ -461,33 +461,33 @@ function syncPickerToForm() {
   }
 }
 
-// 체크인/체크아웃이 모두 정해지면, 신규 예약에 한해 저장된 날짜별 요금을 합산해
-// "총 요금" 칸에 기본값으로 채워준다. (기존 예약 수정 중에는 건드리지 않음)
-async function updateDefaultPriceIfApplicable() {
+// 체크인/체크아웃이 모두 정해지면, 신규 예약에 한해 펜션별 요일/인원 기준 요금표로
+// "총 요금" 칸에 기본값을 자동으로 채워준다. (기존 예약 수정 중에는 건드리지 않음)
+// 이후에도 이 입력칸은 직접 수정할 수 있다.
+function updateDefaultPriceIfApplicable() {
   if (!isCreatingNew) return;
   const { selectingCheckIn: ci, selectingCheckOut: co } = pickerState;
   if (!ci || !co) return;
 
-  try {
-    const res = await fetch(`/api/daily-rates?pension_id=${state.currentPensionId}&start=${ci}&end=${co}`);
-    if (!res.ok) return;
-    const rates = await res.json();
+  const pension = state.pensions.find((p) => p.id === state.currentPensionId);
+  if (!pension) return;
 
-    // check_out 당일은 숙박하지 않는 퇴실일이므로 합산에서 제외
-    const nightlyTotal = rates
-      .filter((r) => r.date < co)
-      .reduce((sum, r) => sum + r.price, 0);
+  const numGuests = Number(document.getElementById('numGuests').value) || null;
+  const bbqRequested = document.getElementById('bbqRequested').checked;
 
-    if (nightlyTotal > 0) {
-      const totalInput = document.getElementById('totalPrice');
-      totalInput.value = formatNumber(nightlyTotal);
-      const paid = parseNumber(document.getElementById('paidAmount').value);
-      document.getElementById('remainingAmount').textContent = formatNumber(nightlyTotal - paid);
-    }
-  } catch (err) {
-    console.error('기본 요금 계산 실패:', err);
-  }
+  const stayPrice = calcStayPrice(pension.name, ci, co, numGuests);
+  const bbqPrice = bbqRequested ? calcBbqPrice(numGuests) : 0; // 4인 초과분은 저장 시 별도 확인
+  const total = stayPrice + bbqPrice;
+
+  const totalInput = document.getElementById('totalPrice');
+  totalInput.value = formatNumber(total);
+  const paid = parseNumber(document.getElementById('paidAmount').value);
+  document.getElementById('remainingAmount').textContent = formatNumber(total - paid);
 }
+
+// 인원수 / 바베큐 여부가 바뀌어도 기본 요금을 다시 계산
+document.getElementById('numGuests').addEventListener('input', updateDefaultPriceIfApplicable);
+document.getElementById('bbqRequested').addEventListener('change', updateDefaultPriceIfApplicable);
 
 document.getElementById('pickerPrevMonth').onclick = () => {
   pickerState.month -= 1;
@@ -517,7 +517,27 @@ if (checkOut <= checkIn) {
 }
 
 const id = document.getElementById('resId').value;
-  
+
+  // 신규 예약이고 바베큐를 요청했는데 인원이 4인을 초과하면,
+  // 아직 정해지지 않은 추가 바베큐 요금을 저장 직전에 확인한다.
+  const numGuestsForBbq = Number(document.getElementById('numGuests').value) || null;
+  const bbqRequestedNow = document.getElementById('bbqRequested').checked;
+  if (isCreatingNew && bbqRequestedNow && numGuestsForBbq && numGuestsForBbq > BBQ_BASE_GUESTS) {
+    const answer = prompt(
+      `바베큐 인원이 ${BBQ_BASE_GUESTS}인을 초과했습니다 (현재 ${numGuestsForBbq}명).\n` +
+      `기본 요금(₩${formatNumber(BBQ_BASE_PRICE)}) 외에 추가로 받을 금액을 입력해주세요. (없으면 0)`,
+      '0'
+    );
+    const extra = parseNumber(answer);
+    if (extra > 0) {
+      const totalInput = document.getElementById('totalPrice');
+      const newTotal = parseNumber(totalInput.value) + extra;
+      totalInput.value = formatNumber(newTotal);
+      const paid = parseNumber(document.getElementById('paidAmount').value);
+      document.getElementById('remainingAmount').textContent = formatNumber(newTotal - paid);
+    }
+  }
+
   const payload = {
     pension_id: state.currentPensionId,
     guest_name: document.getElementById('guestName').value,
