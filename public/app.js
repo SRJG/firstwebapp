@@ -34,7 +34,6 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1, // 1~12
   reservations: [],
-  dailyRates: {}, // { 'YYYY-MM-DD': price } - 현재 화면에 보이는 달의 날짜별 요금
   viewMode: 'calendar', // 'calendar' | 'list'
 };
 
@@ -73,22 +72,15 @@ function renderTabs() {
   });
 }
 
-// ---- 달력 데이터 로드 (예약 + 날짜별 요금) ----
+// ---- 달력 데이터 로드 (예약 목록) ----
+// 날짜별 1박 요금 표시는 더 이상 daily_rates 테이블을 조회하지 않고,
+// pricing.js의 펜션별 요일 요금표(getNightlyRate)로 그 자리에서 계산해서 보여준다.
 async function loadCalendar() {
   monthLabelEl.textContent = `${state.year}년 ${state.month}월`;
 
   const resvUrl = `/api/reservations?pension_id=${state.currentPensionId}&year=${state.year}&month=${state.month}`;
   const resvRes = await fetch(resvUrl);
   state.reservations = await resvRes.json();
-
-  const monthStart = `${state.year}-${String(state.month).padStart(2, '0')}-01`;
-  const lastDay = new Date(state.year, state.month, 0).getDate();
-  const monthEnd = `${state.year}-${String(state.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  const ratesUrl = `/api/daily-rates?pension_id=${state.currentPensionId}&start=${monthStart}&end=${monthEnd}`;
-  const ratesRes = await fetch(ratesUrl);
-  const rates = await ratesRes.json();
-  state.dailyRates = {};
-  rates.forEach((r) => { state.dailyRates[r.date] = r.price; });
 
   renderGrid();
   if (state.viewMode === 'list') renderListView();
@@ -99,6 +91,7 @@ function renderGrid() {
   const firstDay = new Date(state.year, state.month - 1, 1);
   const daysInMonth = new Date(state.year, state.month, 0).getDate();
   const startWeekday = firstDay.getDay(); // 0=일요일
+  const currentPension = state.pensions.find((p) => p.id === state.currentPensionId);
 
   // 앞쪽 빈 칸
   for (let i = 0; i < startWeekday; i++) {
@@ -120,12 +113,15 @@ function renderGrid() {
     dayNum.textContent = d;
     cell.appendChild(dayNum);
 
-    // 저장된 날짜별 요금이 있으면 작은 텍스트로 표시
-    if (state.dailyRates[dateStr] !== undefined) {
-      const rateEl = document.createElement('div');
-      rateEl.className = 'day-rate';
-      rateEl.textContent = `₩${formatNumber(state.dailyRates[dateStr])}`;
-      cell.appendChild(rateEl);
+    // 펜션별 요일 요금표 기준 1박 요금을 작은 텍스트로 표시
+    if (currentPension) {
+      const rate = getNightlyRate(currentPension.name, dateStr);
+      if (rate) {
+        const rateEl = document.createElement('div');
+        rateEl.className = 'day-rate';
+        rateEl.textContent = `₩${formatNumber(rate)}`;
+        cell.appendChild(rateEl);
+      }
     }
 
     // 이 날짜가 포함된 예약 찾기 (check_in <= date < check_out)
