@@ -319,6 +319,7 @@ const listViewBody = document.getElementById('listViewBody');
 const viewToggleBtn = document.getElementById('viewToggleBtn');
 const todayViewEl = document.getElementById('todayView');
 const todayBtn = document.getElementById('todayBtn');
+viewToggleBtn.classList.add('primary'); // 초기 화면은 달력이므로 '예약 보기' 버튼을 파란색으로 시작
 
 function renderListView() {
   listViewBody.innerHTML = '';
@@ -449,6 +450,10 @@ function setViewMode(mode) {
   calendarViewEl.classList.toggle('hidden', mode !== 'calendar');
   listViewEl.classList.toggle('hidden', mode !== 'list');
   todayViewEl.classList.toggle('hidden', mode !== 'today');
+
+  // 현재 화면에 해당하는 버튼만 파란색(primary)으로 강조
+  viewToggleBtn.classList.toggle('primary', mode !== 'today');
+  todayBtn.classList.toggle('primary', mode === 'today');
 
   if (mode === 'list') renderListView();
   if (mode === 'today') renderTodayView();
