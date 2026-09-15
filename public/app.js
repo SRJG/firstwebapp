@@ -43,10 +43,32 @@ let isCreatingNew = true;
 
 const tabsEl = document.getElementById('tabs');
 const gridEl = document.getElementById('calendarGrid');
-const monthLabelEl = document.getElementById('monthLabel');
+const yearLabelBtn = document.getElementById('yearLabelBtn');
+const monthLabelBtn = document.getElementById('monthLabelBtn');
+const yearDropdown = document.getElementById('yearDropdown');
+const monthDropdown = document.getElementById('monthDropdown');
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
 const modalOverlay = document.getElementById('modalOverlay');
 const form = document.getElementById('reservationForm');
 const deleteBtn = document.getElementById('deleteBtn');
+
+// ---- 달력 이동 가능 범위: 오늘 기준 12개월 후까지만 (매번 현재 시각 기준으로 계산하므로
+//      실제 달이 바뀌면 자동으로 그 다음 달까지 범위가 늘어난다) ----
+function getMaxYearMonth() {
+  const now = new Date();
+  let y = now.getFullYear();
+  let m = now.getMonth() + 1 + 12;
+  while (m > 12) { m -= 12; y += 1; }
+  return { year: y, month: m };
+}
+function isBeyondMax(year, month) {
+  const max = getMaxYearMonth();
+  return year > max.year || (year === max.year && month > max.month);
+}
+function clampToMax(year, month) {
+  return isBeyondMax(year, month) ? getMaxYearMonth() : { year, month };
+}
 
 // ---- 초기화 ----
 async function init() {
@@ -77,7 +99,7 @@ function renderTabs() {
 // 날짜별 1박 요금은 기본적으로 pricing.js의 펜션별 요일 요금표(getNightlyRate)로 계산해서 보여주되,
 // daily_rates 테이블에 그 날짜의 예외 가격(성수기/명절 등, "요금 입력"으로 등록)이 있으면 그걸 우선한다.
 async function loadCalendar() {
-  monthLabelEl.textContent = `${state.year}년 ${state.month}월`;
+  updateMonthNav();
 
   const resvUrl = `/api/reservations?pension_id=${state.currentPensionId}&year=${state.year}&month=${state.month}`;
   const resvRes = await fetch(resvUrl);
@@ -166,16 +188,100 @@ function renderGrid() {
 }
 
 // ---- 월 이동 ----
-document.getElementById('prevMonth').onclick = () => {
+prevMonthBtn.onclick = () => {
   state.month -= 1;
   if (state.month < 1) { state.month = 12; state.year -= 1; }
   loadCalendar();
 };
-document.getElementById('nextMonth').onclick = () => {
-  state.month += 1;
-  if (state.month > 12) { state.month = 1; state.year += 1; }
+nextMonthBtn.onclick = () => {
+  let y = state.year;
+  let m = state.month + 1;
+  if (m > 12) { m = 1; y += 1; }
+  if (isBeyondMax(y, m)) return; // 오늘 기준 12개월 후까지만 이동 가능
+  state.year = y;
+  state.month = m;
   loadCalendar();
 };
+
+// 연도/월 라벨 버튼 + 드롭다운: 상단의 "YYYY년"/"MM월"을 누르면 이동 가능한 연/월 목록이
+// 드롭다운으로 나타나고, 고르면 그 연/월로 바로 이동한다. (달력 화면·오늘의 예약 화면 공통 헤더)
+function closeLabelDropdowns() {
+  yearDropdown.classList.add('hidden');
+  monthDropdown.classList.add('hidden');
+}
+
+function updateMonthNav() {
+  yearLabelBtn.textContent = `${state.year}년`;
+  monthLabelBtn.textContent = `${state.month}월`;
+  let ny = state.year, nm = state.month + 1;
+  if (nm > 12) { nm = 1; ny += 1; }
+  nextMonthBtn.disabled = isBeyondMax(ny, nm); // 다음 달이 12개월 후 한도를 넘으면 다음 버튼 비활성화
+}
+
+async function openYearDropdown() {
+  const alreadyOpen = !yearDropdown.classList.contains('hidden');
+  closeLabelDropdowns();
+  if (alreadyOpen) return;
+
+  let range = { minYear: null, maxYear: null };
+  try {
+    const res = await fetch('/api/reservations/years');
+    range = await res.json();
+  } catch (err) {
+    console.error('연도 범위 조회 실패:', err);
+  }
+
+  const nowYear = new Date().getFullYear();
+  const startYear = range.minYear ? Math.min(range.minYear, nowYear) : nowYear;
+  const endYear = nowYear + 1; // 12개월 창이 걸칠 수 있는 최대 연도는 내년까지
+
+  yearDropdown.innerHTML = '';
+  for (let y = startYear; y <= endYear; y++) {
+    const item = document.createElement('div');
+    item.className = 'label-dropdown-item' + (y === state.year ? ' active' : '');
+    item.textContent = `${y}년`;
+    item.onclick = () => {
+      const clamped = clampToMax(y, state.month);
+      state.year = clamped.year;
+      state.month = clamped.month;
+      loadCalendar();
+      closeLabelDropdowns();
+    };
+    yearDropdown.appendChild(item);
+  }
+  yearDropdown.classList.remove('hidden');
+}
+
+function openMonthDropdown() {
+  const alreadyOpen = !monthDropdown.classList.contains('hidden');
+  closeLabelDropdowns();
+  if (alreadyOpen) return;
+
+  monthDropdown.innerHTML = '';
+  for (let m = 1; m <= 12; m++) {
+    const disabled = isBeyondMax(state.year, m);
+    const item = document.createElement('div');
+    item.className = 'label-dropdown-item'
+      + (m === state.month ? ' active' : '')
+      + (disabled ? ' disabled' : '');
+    item.textContent = `${m}월`;
+    if (!disabled) {
+      item.onclick = () => {
+        state.month = m;
+        loadCalendar();
+        closeLabelDropdowns();
+      };
+    }
+    monthDropdown.appendChild(item);
+  }
+  monthDropdown.classList.remove('hidden');
+}
+
+yearLabelBtn.onclick = (e) => { e.stopPropagation(); openYearDropdown(); };
+monthLabelBtn.onclick = (e) => { e.stopPropagation(); openMonthDropdown(); };
+yearDropdown.onclick = (e) => e.stopPropagation();
+monthDropdown.onclick = (e) => e.stopPropagation();
+document.addEventListener('click', closeLabelDropdowns);
 
 // ---- 요금 입력 모드 ----
 const priceMode = {

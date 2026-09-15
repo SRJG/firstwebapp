@@ -36,6 +36,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/reservations/years
+// 전체 펜션을 통틀어 예약 데이터가 존재하는 연도 범위(최소~최대)를 반환한다.
+// 달력 상단의 "연도" 드롭다운에서 과거 이동 가능 범위를 정할 때 사용.
+// ⚠️ '/:id' 라우트보다 위에 있어야 함 (안 그러면 'years'가 id로 잘못 매칭됨)
+router.get('/years', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT MIN(check_in) AS min_date, MAX(check_out) AS max_date FROM reservations'
+    );
+    const row = result.rows[0];
+    res.json({
+      minYear: row.min_date ? Number(String(row.min_date).slice(0, 4)) : null,
+      maxYear: row.max_date ? Number(String(row.max_date).slice(0, 4)) : null,
+    });
+  } catch (err) {
+    console.error('연도 범위 조회 오류:', err.message);
+    res.status(500).json({ success: false, message: '연도 범위 조회 실패', error: err.message });
+  }
+});
+
 // GET /api/reservations/today?date=YYYY-MM-DD
 // 모든 펜션에 대해, 기준 날짜(date, 없으면 서버 날짜)에 묵고 있는 예약과
 // 그 다음으로 예정된 예약(가장 가까운 미래 예약)을 함께 반환한다.

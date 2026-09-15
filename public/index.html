@@ -14,7 +14,16 @@
 
   <div class="calendar-header">
     <button id="prevMonth">&lt;</button>
-    <h2 id="monthLabel"></h2>
+    <div class="month-label-group">
+      <div class="label-dropdown">
+        <button type="button" id="yearLabelBtn" class="label-btn"></button>
+        <div id="yearDropdown" class="label-dropdown-menu hidden"></div>
+      </div>
+      <div class="label-dropdown">
+        <button type="button" id="monthLabelBtn" class="label-btn"></button>
+        <div id="monthDropdown" class="label-dropdown-menu hidden"></div>
+      </div>
+    </div>
     <button id="nextMonth">&gt;</button>
     <button id="viewToggleBtn">예약 보기</button>
     <button id="priceModeBtn">요금 입력</button>
