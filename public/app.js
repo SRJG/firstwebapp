@@ -34,6 +34,7 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1, // 1~12
   reservations: [],
+  dailyRates: {}, // { 'YYYY-MM-DD': price } - 현재 화면에 보이는 달의 예외 가격(daily_rates)
   viewMode: 'calendar', // 'calendar' | 'list'
 };
 
@@ -73,14 +74,23 @@ function renderTabs() {
 }
 
 // ---- 달력 데이터 로드 (예약 목록) ----
-// 날짜별 1박 요금 표시는 더 이상 daily_rates 테이블을 조회하지 않고,
-// pricing.js의 펜션별 요일 요금표(getNightlyRate)로 그 자리에서 계산해서 보여준다.
+// 날짜별 1박 요금은 기본적으로 pricing.js의 펜션별 요일 요금표(getNightlyRate)로 계산해서 보여주되,
+// daily_rates 테이블에 그 날짜의 예외 가격(성수기/명절 등, "요금 입력"으로 등록)이 있으면 그걸 우선한다.
 async function loadCalendar() {
   monthLabelEl.textContent = `${state.year}년 ${state.month}월`;
 
   const resvUrl = `/api/reservations?pension_id=${state.currentPensionId}&year=${state.year}&month=${state.month}`;
   const resvRes = await fetch(resvUrl);
   state.reservations = await resvRes.json();
+
+  const monthStart = `${state.year}-${String(state.month).padStart(2, '0')}-01`;
+  const lastDay = new Date(state.year, state.month, 0).getDate();
+  const monthEnd = `${state.year}-${String(state.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const ratesUrl = `/api/daily-rates?pension_id=${state.currentPensionId}&start=${monthStart}&end=${monthEnd}`;
+  const ratesRes = await fetch(ratesUrl);
+  const rates = await ratesRes.json();
+  state.dailyRates = {}; // { 'YYYY-MM-DD': price } - 예외 가격(요일 요금표보다 우선)
+  rates.forEach((r) => { state.dailyRates[r.date] = r.price; });
 
   renderGrid();
   if (state.viewMode === 'list') renderListView();
@@ -113,12 +123,13 @@ function renderGrid() {
     dayNum.textContent = d;
     cell.appendChild(dayNum);
 
-    // 펜션별 요일 요금표 기준 1박 요금을 작은 텍스트로 표시
+    // 1박 요금 표시: daily_rates에 등록된 예외 가격이 있으면 그걸, 없으면 요일 요금표 값을 표시
     if (currentPension) {
-      const rate = getNightlyRate(currentPension.name, dateStr);
+      const override = state.dailyRates[dateStr];
+      const rate = override !== undefined ? override : getNightlyRate(currentPension.name, dateStr);
       if (rate) {
         const rateEl = document.createElement('div');
-        rateEl.className = 'day-rate';
+        rateEl.className = 'day-rate' + (override !== undefined ? ' day-rate-override' : '');
         rateEl.textContent = `₩${formatNumber(rate)}`;
         cell.appendChild(rateEl);
       }
@@ -471,7 +482,7 @@ function updateDefaultPriceIfApplicable() {
   const numGuests = Number(document.getElementById('numGuests').value) || null;
   const bbqRequested = document.getElementById('bbqRequested').checked;
 
-  const stayPrice = calcStayPrice(pension.name, ci, co, numGuests);
+  const stayPrice = calcStayPrice(pension.name, ci, co, numGuests, state.dailyRates);
   const bbqPrice = bbqRequested ? calcBbqPrice(numGuests) : 0; // 4인 초과분은 저장 시 별도 확인
   const total = stayPrice + bbqPrice;
 

@@ -1,7 +1,8 @@
 // recalculate-prices.js
 //
 // 지금까지 입력된 모든 예약의 "총 요금(total_price)"을 새로 정한 요금 기준
-// (펜션별 요일별 1박 요금 + 기준 인원 초과 인원 요금 + 바베큐 요금)으로 다시 계산해서 덮어씁니다.
+// (펜션별 요일별 1박 요금 + 기준 인원 초과 인원 요금 + 바베큐 요금 + daily_rates에 등록된
+//  예외 가격(성수기/명절 등, 있으면 요일 요금표보다 우선))으로 다시 계산해서 덮어씁니다.
 //
 // 실행 방법 (프로젝트 폴더에서):
 //   node recalculate-prices.js
@@ -11,23 +12,14 @@
 // - 바베큐를 요청했고 인원이 4인을 초과하는 예약을 만나면, 터미널에서 추가 바베큐 요금을
 //   직접 입력하라는 안내가 나옵니다. 모르면 그냥 Enter를 누르면 추가금 0원으로 처리됩니다.
 
-require('dotenv').config();
-const { Pool } = require('pg');
 const readline = require('readline');
+const pool = require('./db'); // server.js와 같은 커넥션 풀 사용 (DATE 파싱 설정 포함)
 const {
   calcStayPrice,
   calcBbqPrice,
   BBQ_BASE_GUESTS,
   BBQ_BASE_PRICE,
 } = require('./public/pricing');
-
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 function ask(question) {
@@ -59,8 +51,21 @@ async function main() {
         continue;
       }
 
+      // 이 예약 기간에 등록된 예외 가격(daily_rates)을 조회해서 요일 요금표보다 우선 적용
+      const ratesRes = await client.query(
+        'SELECT date, price FROM daily_rates WHERE pension_id = $1 AND date >= $2 AND date < $3',
+        [r.pension_id, r.check_in, r.check_out]
+      );
+      const overrides = {};
+      ratesRes.rows.forEach((row) => {
+        const dateKey = row.date instanceof Date
+          ? row.date.toISOString().slice(0, 10)
+          : String(row.date).slice(0, 10);
+        overrides[dateKey] = row.price;
+      });
+
       const guests = r.num_guests || null; // null이면 calcStayPrice 내부에서 기준 인원으로 처리
-      const stayPrice = calcStayPrice(pensionName, r.check_in, r.check_out, guests);
+      const stayPrice = calcStayPrice(pensionName, r.check_in, r.check_out, guests, overrides);
 
       let bbqPrice = 0;
       if (r.bbq_requested) {

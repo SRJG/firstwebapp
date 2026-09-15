@@ -125,6 +125,10 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   color: #888;
   margin-bottom: 2px;
 }
+.day-rate-override {
+  color: #d9480f;
+  font-weight: bold;
+}
 .reservation-tag {
   background: #d6e4ff;
   border-radius: 4px;
