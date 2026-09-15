@@ -317,37 +317,45 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   text-align: center;
   padding: 30px 0;
 }
-.today-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+.today-table-wrap {
+  overflow-x: auto;
 }
-.today-pension-card {
+.today-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 10px;
+  table-layout: fixed;
+}
+.today-table th {
+  background: #e9ecf3;
+  color: #555;
+  font-size: 14px;
+  padding: 10px 6px;
+  border-radius: 8px;
+  text-align: center;
+}
+.today-table th:first-child { width: 90px; }
+.today-table td {
+  vertical-align: top;
+  padding: 0;
+}
+.today-pension-name {
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
+  font-size: 16px;
+  color: #333;
   background: white;
   border: 1px solid #eee;
   border-radius: 10px;
-  padding: 14px;
-}
-.today-pension-card h3 {
-  margin: 0 0 10px;
-  font-size: 16px;
-  color: #333;
-  border-bottom: 2px solid #4a7cff;
-  padding-bottom: 6px;
-}
-.today-section { margin-bottom: 12px; }
-.today-section:last-child { margin-bottom: 0; }
-.today-section-label {
-  font-size: 12px;
-  font-weight: bold;
-  color: #888;
-  margin-bottom: 6px;
+  padding: 10px 6px;
 }
 .today-resv-info {
   background: #f0f4ff;
   border-radius: 8px;
   padding: 10px;
   cursor: pointer;
+  height: 100%;
 }
 .today-resv-info:hover { background: #dfe8ff; }
 .today-guest-name {
@@ -363,6 +371,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 }
 .today-empty {
   background: #f7f7f8;
+  border: 1px solid #eee;
   border-radius: 8px;
   padding: 10px;
   color: #aaa;
@@ -370,11 +379,11 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   text-align: center;
 }
 
-@media (max-width: 800px) {
-  .today-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
 @media (max-width: 480px) {
-  .today-grid { grid-template-columns: 1fr; gap: 10px; }
   .today-date-heading { font-size: 16px; }
+  .today-table { border-spacing: 6px; min-width: 560px; }
+  .today-table th { font-size: 12px; padding: 8px 4px; }
+  .today-pension-name { font-size: 14px; padding: 8px 4px; }
+  .today-guest-name { font-size: 13px; }
+  .today-resv-detail { font-size: 11px; }
 }

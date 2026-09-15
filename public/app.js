@@ -393,37 +393,54 @@ async function renderTodayView() {
   heading.textContent = `오늘 (${dateStr})`;
   todayViewEl.appendChild(heading);
 
-  const grid = document.createElement('div');
-  grid.className = 'today-grid';
+  // 가로 3칸(구분/오늘 예약/다음 예약) × 세로 4칸(헤더 + 사랑채/별채/바깥채) 표 형식
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'today-table-wrap';
 
+  const table = document.createElement('table');
+  table.className = 'today-table';
+
+  const thead = document.createElement('thead');
+  thead.innerHTML = `
+    <tr>
+      <th>구분</th>
+      <th>오늘 예약</th>
+      <th>다음 예약</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
   data.forEach((p) => {
-    const card = document.createElement('div');
-    card.className = 'today-pension-card';
+    const tr = document.createElement('tr');
 
-    const title = document.createElement('h3');
-    title.textContent = p.pension_name;
-    card.appendChild(title);
+    const nameTd = document.createElement('td');
+    nameTd.className = 'today-pension-name';
+    nameTd.textContent = p.pension_name;
+    tr.appendChild(nameTd);
 
-    const todaySection = document.createElement('div');
-    todaySection.className = 'today-section';
-    todaySection.innerHTML = `<div class="today-section-label">오늘 예약</div>${reservationSummaryHtml(p.today)}`;
+    const todayTd = document.createElement('td');
+    todayTd.className = 'today-cell';
+    todayTd.innerHTML = reservationSummaryHtml(p.today);
     if (p.today) {
-      todaySection.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.today, p.pension_id);
+      todayTd.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.today, p.pension_id);
     }
-    card.appendChild(todaySection);
+    tr.appendChild(todayTd);
 
-    const nextSection = document.createElement('div');
-    nextSection.className = 'today-section';
-    nextSection.innerHTML = `<div class="today-section-label">다음 예약</div>${reservationSummaryHtml(p.next)}`;
+    const nextTd = document.createElement('td');
+    nextTd.className = 'today-cell';
+    nextTd.innerHTML = reservationSummaryHtml(p.next);
     if (p.next) {
-      nextSection.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.next, p.pension_id);
+      nextTd.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.next, p.pension_id);
     }
-    card.appendChild(nextSection);
+    tr.appendChild(nextTd);
 
-    grid.appendChild(card);
+    tbody.appendChild(tr);
   });
+  table.appendChild(tbody);
 
-  todayViewEl.appendChild(grid);
+  tableWrap.appendChild(table);
+  todayViewEl.appendChild(tableWrap);
 }
 
 // 세 화면(달력/예약목록/오늘의 예약) 중 하나로 전환
