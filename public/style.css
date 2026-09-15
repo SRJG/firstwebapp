@@ -353,21 +353,21 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .today-resv-info {
   background: #f0f4ff;
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
   height: 100%;
 }
 .today-resv-info:hover { background: #dfe8ff; }
 .today-guest-name {
   font-weight: bold;
-  font-size: 14px;
+  font-size: 21px;
   color: #222;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .today-resv-detail {
-  font-size: 12px;
+  font-size: 19px;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 .today-empty {
   background: #f7f7f8;
@@ -375,15 +375,15 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   border-radius: 8px;
   padding: 10px;
   color: #aaa;
-  font-size: 13px;
+  font-size: 16px;
   text-align: center;
 }
 
 @media (max-width: 480px) {
   .today-date-heading { font-size: 16px; }
-  .today-table { border-spacing: 6px; min-width: 560px; }
+  .today-table { border-spacing: 6px; min-width: 620px; }
   .today-table th { font-size: 12px; padding: 8px 4px; }
   .today-pension-name { font-size: 14px; padding: 8px 4px; }
-  .today-guest-name { font-size: 13px; }
-  .today-resv-detail { font-size: 11px; }
+  .today-guest-name { font-size: 17px; }
+  .today-resv-detail { font-size: 15px; }
 }
