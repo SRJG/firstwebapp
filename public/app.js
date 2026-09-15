@@ -312,11 +312,13 @@ function openModal(reservation, presetDate) {
 
 document.getElementById('closeModal').onclick = () => modalOverlay.classList.add('hidden');
 
-// ---- 화면 전환 (달력 ↔ 예약 목록) ----
+// ---- 화면 전환 (달력 ↔ 예약 목록 ↔ 오늘의 예약) ----
 const calendarViewEl = document.getElementById('calendarView');
 const listViewEl = document.getElementById('listView');
 const listViewBody = document.getElementById('listViewBody');
 const viewToggleBtn = document.getElementById('viewToggleBtn');
+const todayViewEl = document.getElementById('todayView');
+const todayBtn = document.getElementById('todayBtn');
 
 function renderListView() {
   listViewBody.innerHTML = '';
@@ -344,16 +346,112 @@ function renderListView() {
   });
 }
 
-viewToggleBtn.onclick = () => {
-  state.viewMode = state.viewMode === 'calendar' ? 'list' : 'calendar';
-  if (state.viewMode === 'list') {
-    calendarViewEl.classList.add('hidden');
-    listViewEl.classList.remove('hidden');
-    renderListView();
-  } else {
-    calendarViewEl.classList.remove('hidden');
-    listViewEl.classList.add('hidden');
+// 오늘 날짜를 로컬 기준 'YYYY-MM-DD'로 (new Date().toISOString()은 UTC라 자정 근처에 날짜가 밀릴 수 있어 사용하지 않음)
+function todayDateStr() {
+  const now = new Date();
+  return toDateStr(now.getFullYear(), now.getMonth() + 1, now.getDate());
+}
+
+function reservationSummaryHtml(r) {
+  if (!r) return '<div class="today-empty">예약 없음</div>';
+  return `
+    <div class="today-resv-info">
+      <div class="today-guest-name">${r.guest_name}${r.bbq_requested ? ' 🔥' : ''}</div>
+      <div class="today-resv-detail">${r.check_in} ~ ${r.check_out} · 인원 ${r.num_guests || '-'}명</div>
+      <div class="today-resv-detail">${r.phone || '연락처 미입력'}</div>
+      <div class="today-resv-detail">총 ₩${formatNumber(r.total_price)} · 남은 ₩${formatNumber(r.remaining_amount)}</div>
+    </div>
+  `;
+}
+
+// 오늘의 예약을 열 때는 그 예약이 속한 펜션으로 현재 선택된 펜션 탭도 같이 맞춰준다.
+// (안 그러면 저장/삭제 시 엉뚱한 펜션으로 저장될 수 있음 - 폼 저장은 state.currentPensionId를 씀)
+function openReservationFromToday(reservation, pensionId) {
+  state.currentPensionId = pensionId;
+  renderTabs();
+  openModal(reservation);
+}
+
+async function renderTodayView() {
+  const dateStr = todayDateStr();
+  todayViewEl.innerHTML = '<p class="today-loading">불러오는 중...</p>';
+
+  let data;
+  try {
+    const res = await fetch(`/api/reservations/today?date=${dateStr}`);
+    data = await res.json();
+  } catch (err) {
+    todayViewEl.innerHTML = '<p class="today-loading">불러오기 실패. 새로고침해주세요.</p>';
+    console.error('오늘의 예약 조회 실패:', err);
+    return;
   }
+
+  todayViewEl.innerHTML = '';
+
+  const heading = document.createElement('div');
+  heading.className = 'today-date-heading';
+  heading.textContent = `오늘 (${dateStr})`;
+  todayViewEl.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'today-grid';
+
+  data.forEach((p) => {
+    const card = document.createElement('div');
+    card.className = 'today-pension-card';
+
+    const title = document.createElement('h3');
+    title.textContent = p.pension_name;
+    card.appendChild(title);
+
+    const todaySection = document.createElement('div');
+    todaySection.className = 'today-section';
+    todaySection.innerHTML = `<div class="today-section-label">오늘 예약</div>${reservationSummaryHtml(p.today)}`;
+    if (p.today) {
+      todaySection.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.today, p.pension_id);
+    }
+    card.appendChild(todaySection);
+
+    const nextSection = document.createElement('div');
+    nextSection.className = 'today-section';
+    nextSection.innerHTML = `<div class="today-section-label">다음 예약</div>${reservationSummaryHtml(p.next)}`;
+    if (p.next) {
+      nextSection.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.next, p.pension_id);
+    }
+    card.appendChild(nextSection);
+
+    grid.appendChild(card);
+  });
+
+  todayViewEl.appendChild(grid);
+}
+
+// 세 화면(달력/예약목록/오늘의 예약) 중 하나로 전환
+function setViewMode(mode) {
+  state.viewMode = mode;
+  calendarViewEl.classList.toggle('hidden', mode !== 'calendar');
+  listViewEl.classList.toggle('hidden', mode !== 'list');
+  todayViewEl.classList.toggle('hidden', mode !== 'today');
+
+  if (mode === 'list') renderListView();
+  if (mode === 'today') renderTodayView();
+}
+
+// 저장/삭제 후 지금 보고 있는 화면을 그에 맞게 새로고침
+function refreshCurrentView() {
+  if (state.viewMode === 'today') {
+    renderTodayView();
+  } else {
+    loadCalendar();
+  }
+}
+
+viewToggleBtn.onclick = () => {
+  setViewMode(state.viewMode === 'list' ? 'calendar' : 'list');
+};
+
+todayBtn.onclick = () => {
+  setViewMode(state.viewMode === 'today' ? 'calendar' : 'today');
 };
 
 // 총액/받은 금액 입력 시 쉼표 자동 포맷 + 남은 금액 실시간 계산
@@ -569,7 +667,7 @@ const id = document.getElementById('resId').value;
 
   if (res.ok) {
     modalOverlay.classList.add('hidden');
-    loadCalendar();
+    refreshCurrentView();
   } else {
     alert('저장 실패. 콘솔을 확인해주세요.');
     console.error(await res.text());
@@ -584,7 +682,7 @@ deleteBtn.onclick = async () => {
   const res = await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
   if (res.ok) {
     modalOverlay.classList.add('hidden');
-    loadCalendar();
+    refreshCurrentView();
   } else {
     alert('삭제 실패');
   }

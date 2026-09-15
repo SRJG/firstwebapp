@@ -90,7 +90,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   border-radius: 6px;
   padding: 6px 0;
   text-align: center;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: bold;
   color: #555;
 }
@@ -103,13 +103,13 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   gap: 6px;
 }
 .day-cell {
-  min-height: 90px;
+  min-height: 110px;
   background: white;
   border-radius: 8px;
   padding: 6px;
   border: 1px solid #eee;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 17px;
   overflow: hidden;
 }
 .day-cell:hover { border-color: #4a7cff; }
@@ -121,7 +121,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 }
 .day-number { font-weight: bold; margin-bottom: 4px; }
 .day-rate {
-  font-size: 11px;
+  font-size: 15px;
   color: #888;
   margin-bottom: 2px;
 }
@@ -134,7 +134,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   border-radius: 4px;
   padding: 2px 4px;
   margin-top: 2px;
-  font-size: 12px;
+  font-size: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -289,11 +289,11 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   .price-mode-panel input { width: auto; flex: 1; min-width: 80px; }
 
   .weekday-row, .calendar-grid { gap: 3px; }
-  .weekday { font-size: 11px; padding: 4px 0; }
-  .day-cell { min-height: 56px; padding: 2px; font-size: 11px; border-radius: 6px; }
+  .weekday { font-size: 14px; padding: 4px 0; }
+  .day-cell { min-height: 68px; padding: 2px; font-size: 14px; border-radius: 6px; }
   .day-number { margin-bottom: 2px; }
-  .day-rate { font-size: 8px; letter-spacing: -0.3px; }
-  .reservation-tag { font-size: 10px; padding: 1px 3px; }
+  .day-rate { font-size: 11px; letter-spacing: -0.3px; }
+  .reservation-tag { font-size: 13px; padding: 1px 3px; }
 
   .modal { width: min(360px, 92vw); padding: 18px; }
   .row { flex-direction: column; gap: 0; }
@@ -302,5 +302,79 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 @media (max-width: 360px) {
   .weekday-row, .calendar-grid { gap: 2px; }
   .day-cell { padding: 1px; }
-  .day-rate { font-size: 7px; }
+  .day-rate { font-size: 10px; }
+}
+
+/* ===== 오늘의 예약 화면 ===== */
+.today-date-heading {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 14px;
+  color: #333;
+}
+.today-loading {
+  color: #999;
+  text-align: center;
+  padding: 30px 0;
+}
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.today-pension-card {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 14px;
+}
+.today-pension-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #333;
+  border-bottom: 2px solid #4a7cff;
+  padding-bottom: 6px;
+}
+.today-section { margin-bottom: 12px; }
+.today-section:last-child { margin-bottom: 0; }
+.today-section-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #888;
+  margin-bottom: 6px;
+}
+.today-resv-info {
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+}
+.today-resv-info:hover { background: #dfe8ff; }
+.today-guest-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #222;
+  margin-bottom: 4px;
+}
+.today-resv-detail {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+.today-empty {
+  background: #f7f7f8;
+  border-radius: 8px;
+  padding: 10px;
+  color: #aaa;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .today-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .today-grid { grid-template-columns: 1fr; gap: 10px; }
+  .today-date-heading { font-size: 16px; }
 }

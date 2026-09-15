@@ -36,6 +36,44 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/reservations/today?date=YYYY-MM-DD
+// 모든 펜션에 대해, 기준 날짜(date, 없으면 서버 날짜)에 묵고 있는 예약과
+// 그 다음으로 예정된 예약(가장 가까운 미래 예약)을 함께 반환한다.
+// ⚠️ '/:id' 라우트보다 위에 있어야 함 (안 그러면 'today'가 id로 잘못 매칭됨)
+router.get('/today', async (req, res) => {
+  const dateStr = req.query.date || new Date().toISOString().slice(0, 10);
+
+  try {
+    const pensionsRes = await pool.query('SELECT id, name FROM pensions ORDER BY id');
+
+    const result = await Promise.all(pensionsRes.rows.map(async (pension) => {
+      const todayRes = await pool.query(
+        `SELECT * FROM reservations
+         WHERE pension_id = $1 AND check_in <= $2 AND check_out > $2
+         ORDER BY check_in LIMIT 1`,
+        [pension.id, dateStr]
+      );
+      const nextRes = await pool.query(
+        `SELECT * FROM reservations
+         WHERE pension_id = $1 AND check_in > $2
+         ORDER BY check_in LIMIT 1`,
+        [pension.id, dateStr]
+      );
+      return {
+        pension_id: pension.id,
+        pension_name: pension.name,
+        today: todayRes.rows[0] ? withRemaining(todayRes.rows[0]) : null,
+        next: nextRes.rows[0] ? withRemaining(nextRes.rows[0]) : null,
+      };
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error('오늘의 예약 조회 오류:', err.message);
+    res.status(500).json({ success: false, message: '오늘의 예약 조회 실패', error: err.message });
+  }
+});
+
 // GET /api/reservations/:id - 단일 예약 상세 조회
 router.get('/:id', async (req, res) => {
   try {
