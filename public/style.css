@@ -329,7 +329,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .today-table th {
   background: #e9ecf3;
   color: #555;
-  font-size: 14px;
+  font-size: 17px;
   padding: 10px 6px;
   border-radius: 8px;
   text-align: center;
@@ -343,7 +343,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   text-align: center;
   vertical-align: middle;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 17px;
   color: #333;
   background: white;
   border: 1px solid #eee;
@@ -360,12 +360,12 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 .today-resv-info:hover { background: #dfe8ff; }
 .today-guest-name {
   font-weight: bold;
-  font-size: 21px;
+  font-size: 17px;
   color: #222;
   margin-bottom: 6px;
 }
 .today-resv-detail {
-  font-size: 19px;
+  font-size: 17px;
   color: #666;
   line-height: 1.6;
 }
@@ -375,15 +375,15 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   border-radius: 8px;
   padding: 10px;
   color: #aaa;
-  font-size: 16px;
+  font-size: 17px;
   text-align: center;
 }
 
 @media (max-width: 480px) {
   .today-date-heading { font-size: 16px; }
   .today-table { border-spacing: 6px; min-width: 620px; }
-  .today-table th { font-size: 12px; padding: 8px 4px; }
-  .today-pension-name { font-size: 14px; padding: 8px 4px; }
-  .today-guest-name { font-size: 17px; }
-  .today-resv-detail { font-size: 15px; }
+  .today-table th { font-size: 13px; padding: 8px 4px; }
+  .today-pension-name { font-size: 13px; padding: 8px 4px; }
+  .today-guest-name { font-size: 13px; }
+  .today-resv-detail { font-size: 13px; }
 }
