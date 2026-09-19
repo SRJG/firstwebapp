@@ -7,7 +7,122 @@ body {
   background: #f7f7f8;
   color: #222;
 }
-header h1 { margin: 0 0 12px; font-size: 22px; }
+header h1 { margin: 0; font-size: 22px; }
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-link, .header-link-btn {
+  font-size: 13px;
+  color: #4a7cff;
+  text-decoration: none;
+  background: none;
+  border: 1px solid #4a7cff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.header-link:hover, .header-link-btn:hover { background: #eef2ff; }
+
+/* ---- 로그인 화면 ---- */
+.login-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.login-box {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  width: min(360px, 90vw);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.login-box h1 {
+  font-size: 18px;
+  text-align: center;
+  margin: 0 0 20px;
+}
+.login-box form label {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #555;
+}
+.login-box form input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.login-box button.primary {
+  width: 100%;
+  padding: 11px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.login-error {
+  background: #fff0f0;
+  color: #d9480f;
+  border: 1px solid #ffd0c8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* ---- 관리자(회원 관리) 화면 ---- */
+.admin-section { max-width: 640px; }
+.admin-section h2 { font-size: 17px; margin-bottom: 12px; }
+.admin-section #adminTable { margin-bottom: 24px; }
+.admin-section #adminTable td button {
+  padding: 5px 10px;
+  margin-right: 6px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.admin-add-form {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 18px;
+}
+.admin-add-form h3 { margin: 0 0 12px; font-size: 15px; }
+.admin-add-form label {
+  display: block;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 12px;
+}
+.admin-add-form input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.admin-add-form button.primary {
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
 .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
 .tabs button {
@@ -327,6 +442,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 @media (max-width: 480px) {
   body { padding: 10px; }
   header h1 { font-size: 18px; }
+  .header-link, .header-link-btn { font-size: 12px; padding: 5px 9px; }
 
   .tabs { flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .tabs button { padding: 8px 14px; font-size: 13px; }

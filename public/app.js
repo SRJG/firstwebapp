@@ -1,5 +1,24 @@
 // public/app.js
 
+// 세션이 만료되어 401이 오면 로그인 페이지로 자동 이동 (모든 fetch 호출에 공통 적용)
+const _fetch = window.fetch;
+window.fetch = async (...args) => {
+  const res = await _fetch(...args);
+  if (res.status === 401) {
+    window.location.href = '/login.html';
+    return new Promise(() => {}); // 리다이렉트 중이므로 이후 코드가 실행되지 않도록 막음
+  }
+  return res;
+};
+
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.onclick = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  };
+}
+
 // 숫자 ↔ 쉼표 포맷 변환 헬퍼
 function formatNumber(n) {
   if (n === '' || n === null || n === undefined) return '';

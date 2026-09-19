@@ -1,19 +1,43 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const pool = require('./db');
+const { requireLogin } = require('./middleware/auth');
+const authRouter = require('./routes/auth');
+const adminsRouter = require('./routes/admins');
 const pensionsRouter = require('./routes/pensions');
 const reservationsRouter = require('./routes/reservations');
 const dailyRatesRouter = require('./routes/dailyRates');
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public')); //
 
-// 서버 상태 확인용 기본 라우트
-app.get('/', (req, res) => {
-  res.send('서버가 정상적으로 실행 중입니다.');
-});
+// 로그인 세션을 PostgreSQL에 저장 (pm2로 서버를 재시작해도 로그인이 풀리지 않도록)
+app.use(session({
+  store: new pgSession({ pool, tableName: 'session', createTableIfMissing: true }),
+  secret: process.env.SESSION_SECRET || 'pension-app-dev-secret-please-change',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false, // 현재 http로 운영 중이라 false. 나중에 https로 바꾸면 true로 변경할 것.
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+  },
+}));
+
+// 로그인 페이지 관련 몇 개 경로를 제외하고 사이트 전체에 로그인을 요구
+app.use(requireLogin);
+
+app.use(express.static('public'));
+
+// API 라우터 연결
+app.use('/api/auth', authRouter);
+app.use('/api/admins', adminsRouter);
+app.use('/api/pensions', pensionsRouter);
+app.use('/api/reservations', reservationsRouter);
+app.use('/api/daily-rates', dailyRatesRouter);
 
 // DB 연결 테스트 라우트
 app.get('/db-test', async (req, res) => {
@@ -26,11 +50,6 @@ app.get('/db-test', async (req, res) => {
   }
 });
 
-// API 라우터 연결
-app.use('/api/pensions', pensionsRouter);
-app.use('/api/reservations', reservationsRouter);
-app.use('/api/daily-rates', dailyRatesRouter);
-
 // 서버 시작 시 DB 연결도 즉시 한 번 확인
 pool.connect()
   .then((client) => {
@@ -41,6 +60,10 @@ pool.connect()
     console.error('❌ PostgreSQL 최초 연결 실패:', err.message);
     console.error('   .env 파일의 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 확인하세요.');
   });
+
+if (!process.env.SESSION_SECRET) {
+  console.warn('⚠️  경고: .env에 SESSION_SECRET이 설정되어 있지 않습니다. 임시 기본값을 사용 중이니 .env에 추가해주세요.');
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

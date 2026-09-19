@@ -60,7 +60,18 @@ async function migrate() {
     `);
     console.log('✅ daily_rates 테이블 확인/생성 완료');
 
-    // 4) 펜션 3곳 초기 데이터 삽입 (이미 있으면 건너뜀)
+    // 4) admins 테이블 (로그인 가능한 관리자/회원 계정)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✅ admins 테이블 확인/생성 완료');
+
+    // 5) 펜션 3곳 초기 데이터 삽입 (이미 있으면 건너뜀)
     await client.query(`
       INSERT INTO pensions (name) VALUES
         ('사랑채'),

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - 펜션 예약 관리</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>관리자 페이지</h1>
+    <div class="header-actions">
+      <a href="/" class="header-link">달력으로</a>
+      <button id="logoutBtn" class="header-link-btn">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="admin-section">
+    <h2>회원(관리자 계정) 관리</h2>
+    <table class="reservation-table" id="adminTable">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>생성일</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="adminTableBody"></tbody>
+    </table>
+
+    <form id="addAdminForm" class="admin-add-form">
+      <h3>계정 추가</h3>
+      <div class="row">
+        <label>아이디
+          <input type="text" id="newUsername" required>
+        </label>
+        <label>비밀번호
+          <input type="password" id="newPassword" required>
+        </label>
+      </div>
+      <div id="addAdminError" class="login-error hidden"></div>
+      <button type="submit" class="primary">추가</button>
+    </form>
+  </div>
+
+  <div id="passwordModalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h3>비밀번호 변경</h3>
+      <form id="passwordForm">
+        <input type="hidden" id="passwordTargetId">
+        <label>새 비밀번호
+          <input type="password" id="newPasswordInput" required>
+        </label>
+        <div id="passwordError" class="login-error hidden"></div>
+        <div class="modal-actions">
+          <button type="submit" class="primary">변경</button>
+          <button type="button" id="closePasswordModal">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로그인 - 펜션 예약 관리</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="login-body">
+  <div class="login-box">
+    <h1>펜션 예약 관리</h1>
+    <form id="loginForm">
+      <label>아이디
+        <input type="text" id="username" autocomplete="username" required>
+      </label>
+      <label>비밀번호
+        <input type="password" id="password" autocomplete="current-password" required>
+      </label>
+      <div id="loginError" class="login-error hidden"></div>
+      <button type="submit" class="primary">로그인</button>
+    </form>
+  </div>
+  <script src="login.js"></script>
+</body>
+</html>
