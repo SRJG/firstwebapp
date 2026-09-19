@@ -93,9 +93,15 @@ header h1 { margin: 0; font-size: 22px; }
   margin-right: 6px;
   border: 1px solid #ddd;
   background: white;
+  color: #222;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
+}
+.admin-section #adminTable td button.danger {
+  background: #ff4a4a;
+  color: white;
+  border: none;
 }
 .admin-add-form {
   background: white;
