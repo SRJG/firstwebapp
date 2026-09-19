@@ -21,6 +21,7 @@
       <thead>
         <tr>
           <th>아이디</th>
+          <th>등급</th>
           <th>생성일</th>
           <th></th>
         </tr>
@@ -38,6 +39,13 @@
           <input type="password" id="newPassword" required>
         </label>
       </div>
+      <label>등급
+        <select id="newRole">
+          <option value="system">시스템 관리자 (모든 메뉴 사용 가능)</option>
+          <option value="reservation" selected>예약 관리자 (관리자 메뉴 제외 전체 예약 관리)</option>
+          <option value="facility">시설 관리자 (예약 조회만 가능, 수정 불가)</option>
+        </select>
+      </label>
       <div id="addAdminError" class="login-error hidden"></div>
       <button type="submit" class="primary">추가</button>
     </form>

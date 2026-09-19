@@ -10,6 +10,12 @@ window.fetch = async (...args) => {
   return res;
 };
 
+const ROLE_LABELS = {
+  system: '시스템 관리자',
+  reservation: '예약 관리자',
+  facility: '시설 관리자',
+};
+
 const tableBody = document.getElementById('adminTableBody');
 const addForm = document.getElementById('addAdminForm');
 const addError = document.getElementById('addAdminError');
@@ -19,18 +25,47 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function buildRoleSelect(admin) {
+  const select = document.createElement('select');
+  select.className = 'role-select';
+  Object.entries(ROLE_LABELS).forEach(([value, label]) => {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = label;
+    if (value === admin.role) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.onchange = () => changeRole(admin.id, select.value, select);
+  return select;
+}
+
+async function changeRole(id, role, selectEl) {
+  const res = await fetch(`/api/admins/${id}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.message || '등급 변경에 실패했습니다.');
+    loadAdmins(); // 실패 시 원래 값으로 되돌리기 위해 다시 불러옴
+    return;
+  }
+}
+
 async function loadAdmins() {
   const res = await fetch('/api/admins');
   const admins = await res.json();
   tableBody.innerHTML = '';
   admins.forEach((a) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${a.username}</td>
-      <td>${formatDate(a.created_at)}</td>
-      <td></td>
-    `;
-    const actionTd = tr.children[2];
+    const nameTd = document.createElement('td');
+    nameTd.textContent = a.username;
+    const roleTd = document.createElement('td');
+    roleTd.appendChild(buildRoleSelect(a));
+    const dateTd = document.createElement('td');
+    dateTd.textContent = formatDate(a.created_at);
+    const actionTd = document.createElement('td');
 
     const pwBtn = document.createElement('button');
     pwBtn.textContent = '비밀번호 변경';
@@ -43,6 +78,10 @@ async function loadAdmins() {
     delBtn.onclick = () => deleteAdmin(a.id, a.username);
     actionTd.appendChild(delBtn);
 
+    tr.appendChild(nameTd);
+    tr.appendChild(roleTd);
+    tr.appendChild(dateTd);
+    tr.appendChild(actionTd);
     tableBody.appendChild(tr);
   });
 }
@@ -63,11 +102,12 @@ addForm.onsubmit = async (e) => {
   addError.classList.add('hidden');
   const username = document.getElementById('newUsername').value.trim();
   const password = document.getElementById('newPassword').value;
+  const role = document.getElementById('newRole').value;
 
   const res = await fetch('/api/admins', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, role }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -77,6 +117,7 @@ addForm.onsubmit = async (e) => {
   }
   document.getElementById('newUsername').value = '';
   document.getElementById('newPassword').value = '';
+  document.getElementById('newRole').value = 'reservation';
   loadAdmins();
 };
 

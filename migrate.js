@@ -71,6 +71,14 @@ async function migrate() {
     `);
     console.log('✅ admins 테이블 확인/생성 완료');
 
+    // 4-1) admins 테이블에 등급(role) 컬럼 추가 (이미 있으면 건너뜀)
+    //      system(시스템 관리자) / reservation(예약 관리자) / facility(시설 관리자, 조회만 가능)
+    //      기존에 만들어져 있던 계정은 전부 시스템 관리자로 유지됨 (DEFAULT 'system')
+    await client.query(`
+      ALTER TABLE admins ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'system';
+    `);
+    console.log('✅ admins.role 컬럼 확인/추가 완료');
+
     // 5) 펜션 3곳 초기 데이터 삽입 (이미 있으면 건너뜀)
     await client.query(`
       INSERT INTO pensions (name) VALUES

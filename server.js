@@ -4,7 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const pool = require('./db');
-const { requireLogin } = require('./middleware/auth');
+const { requireLogin, requireRole, blockFacilityWrite } = require('./middleware/auth');
 const authRouter = require('./routes/auth');
 const adminsRouter = require('./routes/admins');
 const pensionsRouter = require('./routes/pensions');
@@ -30,14 +30,22 @@ app.use(session({
 // 로그인 페이지 관련 몇 개 경로를 제외하고 사이트 전체에 로그인을 요구
 app.use(requireLogin);
 
+// 관리자(회원 관리) 화면은 시스템 관리자만 볼 수 있음 (다른 등급이면 메인 화면으로)
+app.use((req, res, next) => {
+  if (req.path === '/admin.html' && (!req.session || req.session.role !== 'system')) {
+    return res.redirect('/');
+  }
+  next();
+});
+
 app.use(express.static('public'));
 
 // API 라우터 연결
 app.use('/api/auth', authRouter);
-app.use('/api/admins', adminsRouter);
+app.use('/api/admins', requireRole('system'), adminsRouter); // 회원 관리는 시스템 관리자 전용
 app.use('/api/pensions', pensionsRouter);
-app.use('/api/reservations', reservationsRouter);
-app.use('/api/daily-rates', dailyRatesRouter);
+app.use('/api/reservations', blockFacilityWrite, reservationsRouter); // 시설 관리자는 조회만
+app.use('/api/daily-rates', blockFacilityWrite, dailyRatesRouter);   // 시설 관리자는 조회만
 
 // DB 연결 테스트 라우트
 app.get('/db-test', async (req, res) => {

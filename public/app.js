@@ -55,6 +55,7 @@ const state = {
   reservations: [],
   dailyRates: {}, // { 'YYYY-MM-DD': price } - 현재 화면에 보이는 달의 예외 가격(daily_rates)
   viewMode: 'calendar', // 'calendar' | 'list'
+  role: null, // 'system' | 'reservation' | 'facility' - /api/auth/me로 로그인 직후 채워짐
 };
 
 // 예약 등록/수정 모달이 "신규 등록"인지 여부 (신규일 때만 요금 자동 채우기 동작)
@@ -91,11 +92,30 @@ function clampToMax(year, month) {
 
 // ---- 초기화 ----
 async function init() {
+  const meRes = await fetch('/api/auth/me');
+  const me = await meRes.json();
+  state.role = me.role;
+  applyRoleUI();
+
   const res = await fetch('/api/pensions');
   state.pensions = await res.json();
   state.currentPensionId = state.pensions[0]?.id;
   renderTabs();
   await loadCalendar();
+}
+
+// 로그인한 계정의 등급에 따라 화면 요소를 켜고 끈다.
+// - system(시스템 관리자): 전부 사용 가능 (변경 없음)
+// - reservation(예약 관리자): "관리자" 메뉴만 숨김, 나머지는 시스템 관리자와 동일
+// - facility(시설 관리자): "관리자" 메뉴 + "요금 입력"을 숨기고, 예약은 조회만 가능(수정 불가)
+function applyRoleUI() {
+  const adminLink = document.getElementById('adminLink');
+  if (adminLink && state.role !== 'system') {
+    adminLink.classList.add('hidden');
+  }
+  if (state.role === 'facility') {
+    priceModeBtn.classList.add('hidden');
+  }
 }
 
 function renderTabs() {
@@ -198,6 +218,7 @@ function renderGrid() {
         togglePriceSelect(dateStr, cell);
         return;
       }
+      if (state.role === 'facility') return; // 시설 관리자는 조회만 가능 (새 예약 등록 불가)
       // 빈 날짜 클릭 시 새 예약 등록 (해당 날짜를 체크인으로)
       if (matches.length === 0) openModal(null, dateStr);
     };
@@ -383,6 +404,14 @@ priceModeApplyBtn.onclick = async () => {
 };
 
 // ---- 모달 ----
+// 시설 관리자가 예약을 열람할 때는 내용은 보이지만 수정/저장/삭제는 할 수 없는 "조회 전용" 모드로 연다.
+function applyReadOnlyMode(readOnly) {
+  form.querySelectorAll('input, textarea').forEach((el) => { el.disabled = readOnly; });
+  form.querySelector('button[type="submit"]').classList.toggle('hidden', readOnly);
+  if (readOnly) deleteBtn.classList.add('hidden');
+  document.querySelector('.mini-calendar').classList.toggle('read-only', readOnly);
+}
+
 function openModal(reservation, presetDate) {
   form.reset();
   document.getElementById('remainingAmount').textContent = '0';
@@ -432,6 +461,7 @@ function openModal(reservation, presetDate) {
   syncPickerToForm();
   renderPicker();
   updateDefaultPriceIfApplicable();
+  applyReadOnlyMode(!!reservation && state.role === 'facility');
   modalOverlay.classList.remove('hidden');
 }
 

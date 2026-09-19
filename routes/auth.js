@@ -22,7 +22,8 @@ router.post('/login', async (req, res) => {
     }
     req.session.adminId = admin.id;
     req.session.username = admin.username;
-    res.json({ success: true, username: admin.username });
+    req.session.role = admin.role;
+    res.json({ success: true, username: admin.username, role: admin.role });
   } catch (err) {
     console.error('로그인 오류:', err.message);
     res.status(500).json({ success: false, message: '로그인 처리 중 오류가 발생했습니다.', error: err.message });
@@ -39,7 +40,7 @@ router.post('/logout', (req, res) => {
 
 // GET /api/auth/me - 현재 로그인 상태 확인 (로그인 안 돼있으면 requireLogin 미들웨어에서 이미 401 처리됨)
 router.get('/me', (req, res) => {
-  res.json({ loggedIn: true, username: req.session.username });
+  res.json({ loggedIn: true, username: req.session.username, role: req.session.role });
 });
 
 module.exports = router;

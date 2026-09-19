@@ -110,13 +110,19 @@ header h1 { margin: 0; font-size: 22px; }
   color: #555;
   margin-bottom: 12px;
 }
-.admin-add-form input {
+.admin-add-form input, .admin-add-form select {
   width: 100%;
   padding: 8px;
   margin-top: 4px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+}
+.admin-section select.role-select {
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
 }
 .admin-add-form button.primary {
   padding: 9px 18px;
@@ -342,6 +348,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   border-radius: 6px;
   font-size: 14px;
 }
+.modal form input:disabled, .modal form textarea:disabled { background: #f2f2f2; color: #777; }
 .row { display: flex; gap: 12px; }
 .row label { flex: 1; }
 .modal form label.checkbox-label {
@@ -373,6 +380,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   color: #333;
 }
 .mini-calendar { border: 1px solid #eee; border-radius: 8px; padding: 8px; }
+.mini-calendar.read-only { pointer-events: none; opacity: 0.6; }
 .mini-calendar-header {
   display: flex;
   align-items: center;
