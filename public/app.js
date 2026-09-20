@@ -860,7 +860,14 @@ const id = document.getElementById('resId').value;
     modalOverlay.classList.add('hidden');
     refreshCurrentView();
   } else {
-    alert('저장 실패. 콘솔을 확인해주세요.');
+    let message = '저장 실패. 콘솔을 확인해주세요.';
+    try {
+      const errBody = await res.clone().json();
+      if (errBody && errBody.message) message = errBody.message;
+    } catch (parseErr) {
+      // JSON이 아니면 기본 메시지 사용
+    }
+    alert(message);
     console.error(await res.text());
   }
 };

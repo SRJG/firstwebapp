@@ -8,6 +8,19 @@ function withRemaining(row) {
   return { ...row, remaining_amount: row.total_price - row.paid_amount };
 }
 
+// 같은 방(pension_id)에 하룻밤이라도 겹치는 다른 예약이 있는지 확인 (한 방=하룻밤=한 팀).
+// excludeId를 주면 그 예약 자신은 비교 대상에서 제외 (수정 시 자기 자신과는 항상 겹치므로).
+async function findOverlappingReservation(pensionId, checkIn, checkOut, excludeId) {
+  const result = await pool.query(
+    `SELECT id, guest_name, check_in, check_out FROM reservations
+     WHERE pension_id = $1 AND check_in < $3 AND check_out > $2
+       AND ($4::int IS NULL OR id != $4)
+     LIMIT 1`,
+    [pensionId, checkIn, checkOut, excludeId || null]
+  );
+  return result.rows[0] || null;
+}
+
 // GET /api/reservations?pension_id=1&year=2026&month=9
 // 특정 펜션의 특정 월과 겹치는 예약 목록 조회
 router.get('/', async (req, res) => {
@@ -129,6 +142,14 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    const overlap = await findOverlappingReservation(pension_id, check_in, check_out, null);
+    if (overlap) {
+      return res.status(409).json({
+        success: false,
+        message: `같은 기간에 이미 예약이 있습니다: ${overlap.guest_name}님 (${overlap.check_in} ~ ${overlap.check_out}). 한 방에는 하룻밤에 한 팀만 예약할 수 있습니다.`,
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO reservations
         (pension_id, guest_name, phone, check_in, check_out, num_guests, total_price, paid_amount, bbq_requested, memo)
@@ -154,16 +175,30 @@ router.put('/:id', async (req, res) => {
     num_guests, total_price, paid_amount, bbq_requested, memo,
   } = req.body;
 
-  // check_in과 check_out을 둘 다 보낸 경우에만 순서 검증
-  // (하나만 수정하는 경우 기존 값과의 비교는 DB 조회가 필요해 여기서는 생략)
-  if (check_in && check_out && check_out <= check_in) {
-    return res.status(400).json({
-      success: false,
-      message: '체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.',
-    });
-  }
-
   try {
+    const currentRes = await pool.query('SELECT * FROM reservations WHERE id = $1', [req.params.id]);
+    if (currentRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: '예약을 찾을 수 없습니다.' });
+    }
+    const current = currentRes.rows[0];
+    const finalCheckIn = check_in || current.check_in;
+    const finalCheckOut = check_out || current.check_out;
+
+    if (finalCheckOut <= finalCheckIn) {
+      return res.status(400).json({
+        success: false,
+        message: '체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.',
+      });
+    }
+
+    const overlap = await findOverlappingReservation(current.pension_id, finalCheckIn, finalCheckOut, req.params.id);
+    if (overlap) {
+      return res.status(409).json({
+        success: false,
+        message: `같은 기간에 이미 다른 예약이 있습니다: ${overlap.guest_name}님 (${overlap.check_in} ~ ${overlap.check_out}). 한 방에는 하룻밤에 한 팀만 예약할 수 있습니다.`,
+      });
+    }
+
     const result = await pool.query(
       `UPDATE reservations SET
         guest_name = COALESCE($1, guest_name),
