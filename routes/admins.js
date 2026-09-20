@@ -127,4 +127,130 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET /api/admins/backup - 전체 예약 데이터 백업(다운로드용 JSON)
+// 펜션(pensions)은 참고용으로만 포함하고, 예약/요금은 pension_id 대신 pension_name으로 저장해서
+// 나중에 복원할 때 DB의 펜션 id가 지금과 달라도(순서가 바뀌어도) 이름으로 다시 연결할 수 있게 한다.
+// 관리자 계정(admins)은 비밀번호 해시가 포함되므로 보안상 백업에서 제외한다.
+router.get('/backup', async (req, res) => {
+  try {
+    const pensionsResult = await pool.query('SELECT id, name FROM pensions ORDER BY id');
+    const pensionNameById = {};
+    pensionsResult.rows.forEach((p) => { pensionNameById[p.id] = p.name; });
+
+    const reservationsResult = await pool.query(
+      `SELECT pension_id, guest_name, phone, check_in, check_out, num_guests,
+              total_price, paid_amount, bbq_requested, memo, created_at, updated_at
+       FROM reservations ORDER BY check_in`
+    );
+    const dailyRatesResult = await pool.query(
+      'SELECT pension_id, date, price FROM daily_rates ORDER BY date'
+    );
+
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      pensions: pensionsResult.rows.map((p) => ({ name: p.name })),
+      reservations: reservationsResult.rows.map((r) => ({
+        pension_name: pensionNameById[r.pension_id],
+        guest_name: r.guest_name,
+        phone: r.phone,
+        check_in: r.check_in,
+        check_out: r.check_out,
+        num_guests: r.num_guests,
+        total_price: r.total_price,
+        paid_amount: r.paid_amount,
+        bbq_requested: r.bbq_requested,
+        memo: r.memo,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      })),
+      dailyRates: dailyRatesResult.rows.map((d) => ({
+        pension_name: pensionNameById[d.pension_id],
+        date: d.date,
+        price: d.price,
+      })),
+    };
+
+    const filename = `pension-backup-${backup.exportedAt.slice(0, 10)}.json`;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(JSON.stringify(backup, null, 2));
+  } catch (err) {
+    console.error('백업 생성 오류:', err.message);
+    res.status(500).json({ success: false, message: '백업 생성 실패', error: err.message });
+  }
+});
+
+// POST /api/admins/restore - 백업 파일로 예약/요금 데이터 복원
+// ⚠️ 되돌릴 수 없음: 현재 reservations, daily_rates 데이터를 모두 지우고 백업 내용으로 교체한다.
+// (pensions, admins 테이블은 건드리지 않음)
+router.post('/restore', async (req, res) => {
+  const backup = req.body;
+
+  if (!backup || !Array.isArray(backup.reservations) || !Array.isArray(backup.dailyRates)) {
+    return res.status(400).json({
+      success: false,
+      message: '올바른 백업 파일이 아닙니다. (reservations, dailyRates 형식이 필요합니다)',
+    });
+  }
+
+  const client = await pool.connect();
+  try {
+    // 백업 안의 pension_name들이 현재 DB에 전부 존재하는지 먼저 확인 (하나라도 없으면 복원 중단)
+    const pensionsResult = await client.query('SELECT id, name FROM pensions');
+    const pensionIdByName = {};
+    pensionsResult.rows.forEach((p) => { pensionIdByName[p.name] = p.id; });
+
+    const usedNames = new Set([
+      ...backup.reservations.map((r) => r.pension_name),
+      ...backup.dailyRates.map((d) => d.pension_name),
+    ]);
+    const missingNames = [...usedNames].filter((name) => !pensionIdByName[name]);
+    if (missingNames.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `현재 시스템에 없는 펜션이 백업에 포함되어 있습니다: ${missingNames.join(', ')}`,
+      });
+    }
+
+    await client.query('BEGIN');
+    await client.query('DELETE FROM daily_rates');
+    await client.query('DELETE FROM reservations');
+
+    for (const r of backup.reservations) {
+      await client.query(
+        `INSERT INTO reservations
+          (pension_id, guest_name, phone, check_in, check_out, num_guests, total_price, paid_amount, bbq_requested, memo, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, COALESCE($11, NOW()), COALESCE($12, NOW()))`,
+        [
+          pensionIdByName[r.pension_name], r.guest_name, r.phone || null, r.check_in, r.check_out,
+          r.num_guests || null, r.total_price || 0, r.paid_amount || 0,
+          r.bbq_requested || false, r.memo || null, r.created_at || null, r.updated_at || null,
+        ]
+      );
+    }
+
+    for (const d of backup.dailyRates) {
+      await client.query(
+        `INSERT INTO daily_rates (pension_id, date, price)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (pension_id, date) DO UPDATE SET price = EXCLUDED.price, updated_at = NOW()`,
+        [pensionIdByName[d.pension_name], d.date, d.price || 0]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      message: `복원 완료: 예약 ${backup.reservations.length}건, 요금 ${backup.dailyRates.length}건`,
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('백업 복원 오류:', err.message);
+    res.status(500).json({ success: false, message: '백업 복원 실패', error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

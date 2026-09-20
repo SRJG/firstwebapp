@@ -135,6 +135,55 @@ header h1 { margin: 0; font-size: 22px; }
   border-radius: 6px;
   cursor: pointer;
 }
+.admin-section + .admin-section { margin-top: 32px; }
+.backup-restore-box {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 18px;
+}
+.backup-restore-box .admin-note {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.backup-restore-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.backup-restore-row:last-child { margin-bottom: 0; }
+.backup-restore-box button {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #222;
+  cursor: pointer;
+  font-size: 14px;
+}
+.backup-restore-box button.primary {
+  background: #4a7cff;
+  color: white;
+  border: none;
+}
+.backup-restore-box button.danger {
+  background: #ff4a4a;
+  color: white;
+  border: none;
+}
+.backup-restore-box input[type="file"] {
+  font-size: 13px;
+}
+#backupRestoreMsg {
+  margin-top: 10px;
+  font-size: 13px;
+}
+#backupRestoreMsg.error { color: #d9480f; }
+#backupRestoreMsg.success { color: #2f9e44; }
 
 .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
 .tabs button {

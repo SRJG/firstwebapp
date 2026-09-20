@@ -12,7 +12,7 @@ const reservationsRouter = require('./routes/reservations');
 const dailyRatesRouter = require('./routes/dailyRates');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // 백업 복원 시 큰 JSON 파일을 받을 수 있도록 넉넉하게 설정
 
 // 로그인 세션을 PostgreSQL에 저장 (pm2로 서버를 재시작해도 로그인이 풀리지 않도록)
 app.use(session({

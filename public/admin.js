@@ -160,4 +160,76 @@ document.getElementById('logoutBtn').onclick = async () => {
   window.location.href = '/login.html';
 };
 
+// ---- 데이터 백업/복원 ----
+function showBackupRestoreMsg(text, type) {
+  const el = document.getElementById('backupRestoreMsg');
+  el.textContent = text;
+  el.className = type || '';
+}
+
+document.getElementById('backupBtn').onclick = async () => {
+  showBackupRestoreMsg('백업 파일을 생성하는 중입니다...', '');
+  const res = await fetch('/api/admins/backup');
+  if (!res.ok) {
+    let msg = '백업 생성에 실패했습니다.';
+    try {
+      const data = await res.json();
+      if (data.message) msg = data.message;
+    } catch (err) {
+      // 응답이 JSON이 아니면 기본 메시지 사용
+    }
+    showBackupRestoreMsg(msg, 'error');
+    return;
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match ? match[1] : `pension-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showBackupRestoreMsg(`백업 파일(${filename})을 다운로드했습니다.`, 'success');
+};
+
+document.getElementById('restoreBtn').onclick = async () => {
+  const fileInput = document.getElementById('restoreFileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    showBackupRestoreMsg('복원할 백업 파일을 먼저 선택해주세요.', 'error');
+    return;
+  }
+  if (!confirm('정말 복원할까요?\n현재의 모든 예약/요금 데이터가 사라지고, 선택한 백업 파일 내용으로 완전히 대체됩니다.\n이 작업은 되돌릴 수 없습니다.')) {
+    return;
+  }
+
+  let backup;
+  try {
+    const text = await file.text();
+    backup = JSON.parse(text);
+  } catch (err) {
+    showBackupRestoreMsg('백업 파일을 읽을 수 없습니다. 올바른 JSON 파일인지 확인해주세요.', 'error');
+    return;
+  }
+
+  showBackupRestoreMsg('복원하는 중입니다...', '');
+  const res = await fetch('/api/admins/restore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(backup),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    showBackupRestoreMsg(data.message || '복원에 실패했습니다.', 'error');
+    return;
+  }
+  showBackupRestoreMsg(data.message || '복원이 완료되었습니다.', 'success');
+  fileInput.value = '';
+};
+
 loadAdmins();
