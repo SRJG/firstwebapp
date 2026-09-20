@@ -196,15 +196,29 @@ function renderGrid() {
       }
     }
 
-    // 이 날짜가 포함된 예약 찾기 (check_in <= date < check_out)
+    // 이 날짜가 포함된 예약 찾기 (check_in <= date < check_out) — 그날 밤 묵는 예약
     const matches = state.reservations.filter(
       (r) => r.check_in <= dateStr && dateStr < r.check_out
     );
+    // 이 날짜에 퇴실하는 예약 (묵는 날은 아니지만 퇴실 표시는 필요 — 연달아 예약 시 마지막 퇴실일이 빈칸으로 보이던 문제 수정)
+    const departures = state.reservations.filter((r) => r.check_out === dateStr);
 
     matches.forEach((r) => {
       const tag = document.createElement('div');
       tag.className = 'reservation-tag' + (r.bbq_requested ? ' bbq' : '');
       tag.textContent = r.guest_name;
+      tag.onclick = (e) => {
+        e.stopPropagation();
+        if (priceMode.active) return; // 요금 입력 모드 중엔 예약 상세를 열지 않음
+        openModal(r);
+      };
+      cell.appendChild(tag);
+    });
+
+    departures.forEach((r) => {
+      const tag = document.createElement('div');
+      tag.className = 'reservation-tag checkout' + (r.bbq_requested ? ' bbq' : '');
+      tag.textContent = r.guest_name + ' 퇴실';
       tag.onclick = (e) => {
         e.stopPropagation();
         if (priceMode.active) return; // 요금 입력 모드 중엔 예약 상세를 열지 않음

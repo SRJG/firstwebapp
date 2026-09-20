@@ -311,8 +311,7 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   margin-bottom: 2px;
 }
 .day-rate-override {
-  color: #d9480f;
-  font-weight: bold;
+  /* 예외 가격(요일 요금표보다 우선 적용되는 날짜별 요금)도 일반 요금과 같은 색으로 통일 */
 }
 .reservation-tag {
   background: #d6e4ff;
@@ -325,6 +324,11 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   text-overflow: ellipsis;
 }
 .reservation-tag.bbq::after { content: " 🔥"; }
+.reservation-tag.checkout {
+  background: #f1f1f1;
+  color: #888;
+  font-style: italic;
+}
 
 .modal-overlay {
   position: fixed; inset: 0;
