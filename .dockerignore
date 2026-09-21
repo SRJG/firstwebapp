@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.env
+.env.*
+!.env.docker.example
+Claude outputs
+progress
+수정 아이디어.txt
