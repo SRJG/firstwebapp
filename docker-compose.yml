@@ -1,40 +1,15 @@
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    # DB를 컨테이너 밖(같은 서버의 다른 프로그램 등)에서도 접속해야 하면 주석을 풀 것.
-    # 앱 컨테이너는 이 포트 매핑 없이도 내부 도커 네트워크로 db에 접속 가능함.
-    # ports:
-    #   - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   app:
     build: .
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      SESSION_SECRET: ${SESSION_SECRET}
-      PORT: 3000
-      NODE_ENV: production
+    env_file:
+      - .env
+    volumes:
+      # Postgres 데이터 파일은 이미지/컨테이너 밖(호스트의 이 폴더)에 그대로 남는다.
+      # 서버에 문제가 생기면: 이 컨테이너를 새로 올리고, 백업해둔 pgdata 폴더와 .env만
+      # 그대로 넣어주면 된다 (아래 restore 명령 참고).
+      - ./pgdata:/var/lib/postgresql/data
     ports:
       - "${APP_PORT:-3000}:3000"
-
-volumes:
-  pgdata:
+      # Postgres에 호스트에서 직접 접속(psql, pg_dump 등)해야 하면 주석을 푸세요.
+      # - "5432:5432"
