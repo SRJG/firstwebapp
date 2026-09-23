@@ -522,8 +522,29 @@ function todayDateStr() {
   return toDateStr(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
-function reservationSummaryHtml(r) {
+// withActions가 true면(오늘 묵고 있는 예약 칸에서만 사용) 도착 여부/바베큐 실행 여부 토글과
+// 받은 금액 입력을 추가로 그린다. 시설 관리자를 포함해 로그인한 누구나 여기서는 이 세 항목만
+// 바로 수정할 수 있다(PATCH /api/reservations/:id/today-status).
+function reservationSummaryHtml(r, withActions) {
   if (!r) return '<div class="today-empty">예약 없음</div>';
+  const actionsHtml = withActions ? `
+    <div class="today-actions">
+      <label class="today-toggle">
+        <input type="checkbox" class="today-arrived-toggle" ${r.arrived ? 'checked' : ''}>
+        도착
+      </label>
+      ${r.bbq_requested ? `
+      <label class="today-toggle">
+        <input type="checkbox" class="today-bbq-toggle" ${r.bbq_completed ? 'checked' : ''}>
+        바베큐 완료
+      </label>` : ''}
+      <div class="today-paid-row">
+        <span class="today-paid-label">잔금 ₩<span class="today-remaining-amount">${formatNumber(r.remaining_amount)}</span></span>
+        <input type="text" class="today-paid-input" inputmode="numeric" value="${formatNumber(r.paid_amount)}" placeholder="받은 금액">
+        <button type="button" class="today-save-paid-btn">저장</button>
+      </div>
+    </div>
+  ` : '';
   return `
     <div class="today-resv-info">
       <div class="today-guest-name">${r.guest_name}${r.bbq_requested ? ' 🔥' : ''}</div>
@@ -531,7 +552,55 @@ function reservationSummaryHtml(r) {
       <div class="today-resv-detail">${r.phone || '연락처 미입력'}</div>
       <div class="today-resv-detail">총 ₩${formatNumber(r.total_price)} · 남은 ₩${formatNumber(r.remaining_amount)}</div>
     </div>
+    ${actionsHtml}
   `;
+}
+
+// "오늘의 예약" 화면에서 도착/바베큐/받은 금액을 서버에 저장 (성공/실패 여부와 관계없이
+// 화면을 다시 불러와서 항상 최신 상태를 보여준다)
+async function patchTodayStatus(id, patch) {
+  try {
+    const res = await fetch(`/api/reservations/${id}/today-status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || '저장에 실패했습니다.');
+    }
+  } catch (err) {
+    console.error('오늘의 예약 상태 저장 실패:', err);
+    alert('저장 중 오류가 발생했습니다.');
+  } finally {
+    renderTodayView();
+  }
+}
+
+// 오늘 칸의 도착/바베큐 토글, 받은 금액 저장 버튼에 이벤트를 연결
+function wireTodayActions(container, reservation) {
+  const arrivedToggle = container.querySelector('.today-arrived-toggle');
+  if (arrivedToggle) {
+    arrivedToggle.onchange = () => patchTodayStatus(reservation.id, { arrived: arrivedToggle.checked });
+  }
+
+  const bbqToggle = container.querySelector('.today-bbq-toggle');
+  if (bbqToggle) {
+    bbqToggle.onchange = () => patchTodayStatus(reservation.id, { bbq_completed: bbqToggle.checked });
+  }
+
+  const paidInput = container.querySelector('.today-paid-input');
+  const saveBtn = container.querySelector('.today-save-paid-btn');
+  if (paidInput && saveBtn) {
+    paidInput.addEventListener('input', () => {
+      const raw = parseNumber(paidInput.value);
+      paidInput.value = formatNumber(raw);
+      paidInput.setSelectionRange(paidInput.value.length, paidInput.value.length);
+    });
+    saveBtn.onclick = () => {
+      patchTodayStatus(reservation.id, { paid_amount: parseNumber(paidInput.value) });
+    };
+  }
 }
 
 // 오늘의 예약을 열 때는 그 예약이 속한 펜션으로 현재 선택된 펜션 탭도 같이 맞춰준다.
@@ -591,15 +660,16 @@ async function renderTodayView() {
 
     const todayTd = document.createElement('td');
     todayTd.className = 'today-cell';
-    todayTd.innerHTML = reservationSummaryHtml(p.today);
+    todayTd.innerHTML = reservationSummaryHtml(p.today, true);
     if (p.today) {
       todayTd.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.today, p.pension_id);
+      wireTodayActions(todayTd, p.today);
     }
     tr.appendChild(todayTd);
 
     const nextTd = document.createElement('td');
     nextTd.className = 'today-cell';
-    nextTd.innerHTML = reservationSummaryHtml(p.next);
+    nextTd.innerHTML = reservationSummaryHtml(p.next, false);
     if (p.next) {
       nextTd.querySelector('.today-resv-info').onclick = () => openReservationFromToday(p.next, p.pension_id);
     }

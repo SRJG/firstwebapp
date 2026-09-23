@@ -121,6 +121,39 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/reservations/:id/today-status - "오늘의 예약" 화면 전용 현장 처리 업데이트
+// 도착 여부(arrived), 바베큐 실행 여부(bbq_completed), 받은 금액(paid_amount)만 수정 가능.
+// 예약 정보 자체(이름/날짜/인원/요금 등)는 이 경로로 수정할 수 없음.
+// 시설 관리자도 이 경로만은 blockFacilityWrite 예외로 허용됨(middleware/auth.js 참고).
+router.patch('/:id/today-status', async (req, res) => {
+  const { arrived, bbq_completed, paid_amount } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE reservations SET
+        arrived = COALESCE($1, arrived),
+        bbq_completed = COALESCE($2, bbq_completed),
+        paid_amount = COALESCE($3, paid_amount),
+        updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [
+        typeof arrived === 'boolean' ? arrived : null,
+        typeof bbq_completed === 'boolean' ? bbq_completed : null,
+        typeof paid_amount === 'number' ? paid_amount : null,
+        req.params.id,
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: '예약을 찾을 수 없습니다.' });
+    }
+    res.json(withRemaining(result.rows[0]));
+  } catch (err) {
+    console.error('오늘의 예약 상태 수정 오류:', err.message);
+    res.status(500).json({ success: false, message: '오늘의 예약 상태 수정 실패', error: err.message });
+  }
+});
+
 // POST /api/reservations - 새 예약 등록
 router.post('/', async (req, res) => {
   const {

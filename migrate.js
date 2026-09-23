@@ -46,6 +46,16 @@ async function migrate() {
     `);
     console.log('✅ reservations 테이블 확인/생성 완료');
 
+    // 2-1) reservations 테이블에 "오늘의 예약" 화면 현장 처리용 컬럼 추가 (이미 있으면 건너뜀)
+    //      arrived: 도착(체크인) 여부, bbq_completed: 바베큐 실행 여부
+    //      시설 관리자도 오늘의 예약 화면에서 이 두 항목과 받은 금액(paid_amount)만은
+    //      직접 수정할 수 있음 (예약 정보 자체는 여전히 수정 불가)
+    await client.query(`
+      ALTER TABLE reservations ADD COLUMN IF NOT EXISTS arrived BOOLEAN NOT NULL DEFAULT false;
+      ALTER TABLE reservations ADD COLUMN IF NOT EXISTS bbq_completed BOOLEAN NOT NULL DEFAULT false;
+    `);
+    console.log('✅ reservations.arrived / bbq_completed 컬럼 확인/추가 완료');
+
     // 3) daily_rates 테이블 (펜션별 날짜별 1박 요금)
     await client.query(`
       CREATE TABLE IF NOT EXISTS daily_rates (

@@ -34,8 +34,12 @@ function requireRole(...roles) {
 }
 
 // 시설 관리자(facility)는 조회(GET)만 가능하고, 그 외 방식(POST/PUT/DELETE)은 막는다.
+// 단, "오늘의 예약" 화면에서 도착 여부/바베큐 실행 여부/받은 금액만 수정하는
+// PATCH /api/reservations/:id/today-status 요청은 예외로 허용한다 (예약 정보 자체는 여전히 수정 불가).
+const TODAY_STATUS_PATH_RE = /^\/\d+\/today-status$/;
 function blockFacilityWrite(req, res, next) {
-  if (req.session && req.session.role === 'facility' && req.method !== 'GET') {
+  const isTodayStatusUpdate = req.method === 'PATCH' && TODAY_STATUS_PATH_RE.test(req.path);
+  if (req.session && req.session.role === 'facility' && req.method !== 'GET' && !isTodayStatusUpdate) {
     return res.status(403).json({ success: false, message: '시설 관리자는 조회만 가능하고 수정은 할 수 없습니다.' });
   }
   next();

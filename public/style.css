@@ -620,6 +620,65 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   text-align: center;
 }
 
+/* 오늘 묵고 있는 예약 칸에만 나오는 도착/바베큐 토글 + 받은 금액 입력 */
+.today-actions {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e3e6ee;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.today-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+.today-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.today-paid-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.today-paid-label {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+.today-paid-input {
+  flex: 1;
+  min-width: 70px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: right;
+}
+.today-save-paid-btn {
+  padding: 6px 12px;
+  background: #4a7cff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.today-save-paid-btn:hover {
+  background: #3a6ae8;
+}
+
 @media (max-width: 480px) {
   .today-date-heading { font-size: 16px; }
   .today-table { border-spacing: 6px; min-width: 620px; }
@@ -627,4 +686,6 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   .today-pension-name { font-size: 13px; padding: 8px 4px; }
   .today-guest-name { font-size: 13px; }
   .today-resv-detail { font-size: 13px; }
+  .today-toggle { font-size: 13px; }
+  .today-paid-label, .today-paid-input, .today-save-paid-btn { font-size: 13px; }
 }
