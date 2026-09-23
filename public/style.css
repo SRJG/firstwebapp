@@ -505,6 +505,78 @@ button.danger { background: #ff4a4a; color: white; border: none; }
   cursor: default;
 }
 
+/* ===== 정산 화면 ===== */
+.settlement-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.settlement-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.settlement-month-nav button {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.settlement-month-nav button:hover { background: #f0f4ff; }
+.settlement-month-label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  min-width: 110px;
+  text-align: center;
+}
+.settlement-note {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+.settlement-table-wrap {
+  overflow-x: auto;
+}
+.settlement-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+  min-width: 560px;
+}
+.settlement-table th, .settlement-table td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid #eee;
+}
+.settlement-table th:first-child, .settlement-table td:first-child {
+  text-align: left;
+}
+.settlement-table th {
+  background: #e9ecf3;
+  font-size: 13px;
+  color: #555;
+}
+.settlement-table td.settlement-empty {
+  text-align: center;
+  color: #999;
+  padding: 30px 0;
+}
+.settlement-total-row td {
+  background: #f0f4ff;
+  font-weight: bold;
+  color: #222;
+  border-top: 2px solid #ccd6f5;
+  border-bottom: none;
+}
+
 /* ===== 모바일 반응형 (~480px) ===== */
 @media (max-width: 480px) {
   body { padding: 10px; }

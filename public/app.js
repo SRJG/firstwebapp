@@ -106,12 +106,16 @@ async function init() {
 
 // 로그인한 계정의 등급에 따라 화면 요소를 켜고 끈다.
 // - system(시스템 관리자): 전부 사용 가능 (변경 없음)
-// - reservation(예약 관리자): "관리자" 메뉴만 숨김, 나머지는 시스템 관리자와 동일
-// - facility(시설 관리자): "관리자" 메뉴 + "요금 입력"을 숨기고, 예약은 조회만 가능(수정 불가)
+// - reservation(예약 관리자): "관리자" 메뉴만 숨김, 나머지는 시스템 관리자와 동일 (정산 포함)
+// - facility(시설 관리자): "관리자"·"정산" 메뉴 + "요금 입력"을 숨기고, 예약은 조회만 가능(수정 불가)
 function applyRoleUI() {
   const adminLink = document.getElementById('adminLink');
   if (adminLink && state.role !== 'system') {
     adminLink.classList.add('hidden');
+  }
+  const settlementLink = document.getElementById('settlementLink');
+  if (settlementLink && state.role === 'facility') {
+    settlementLink.classList.add('hidden');
   }
   if (state.role === 'facility') {
     priceModeBtn.classList.add('hidden');

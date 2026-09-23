@@ -31,8 +31,12 @@ app.use(session({
 app.use(requireLogin);
 
 // 관리자(회원 관리) 화면은 시스템 관리자만 볼 수 있음 (다른 등급이면 메인 화면으로)
+// 정산 화면은 시스템 관리자 + 예약 관리자까지 볼 수 있음 (시설 관리자는 메인 화면으로)
 app.use((req, res, next) => {
   if (req.path === '/admin.html' && (!req.session || req.session.role !== 'system')) {
+    return res.redirect('/');
+  }
+  if (req.path === '/settlement.html' && (!req.session || !['system', 'reservation'].includes(req.session.role))) {
     return res.redirect('/');
   }
   next();

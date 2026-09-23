@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const { requireRole } = require('../middleware/auth');
 
 // 응답에 남은 금액(remaining_amount)을 계산해서 붙여주는 헬퍼
 function withRemaining(row) {
@@ -104,6 +105,73 @@ router.get('/today', async (req, res) => {
   } catch (err) {
     console.error('오늘의 예약 조회 오류:', err.message);
     res.status(500).json({ success: false, message: '오늘의 예약 조회 실패', error: err.message });
+  }
+});
+
+// GET /api/reservations/settlement?year=2026&month=9
+// 정산 페이지 전용 집계: "체크인 날짜"가 해당 연/월에 속하는 예약들을 펜션별로 모아
+// 이용 팀수/이용 인원수/바베큐 횟수/총 요금/미수령 금액(=남은 금액 합)을 계산하고,
+// 세 펜션 전체 합계도 함께 반환한다. 시스템 관리자 + 예약 관리자만 조회 가능
+// (시설 관리자는 blockFacilityWrite는 GET이라 통과하지만 여기 requireRole에서 막힘).
+// ⚠️ '/:id' 라우트보다 위에 있어야 함 ('settlement'도 한 조각짜리 경로라 안 그러면 id로 잘못 매칭됨)
+router.get('/settlement', requireRole('system', 'reservation'), async (req, res) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({
+      success: false,
+      message: 'year, month 쿼리 파라미터가 필요합니다.',
+    });
+  }
+
+  try {
+    const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+
+    const pensionsRes = await pool.query('SELECT id, name FROM pensions ORDER BY id');
+
+    const statsRes = await pool.query(
+      `SELECT
+         pension_id,
+         COUNT(*)::int AS team_count,
+         COALESCE(SUM(num_guests), 0)::int AS guest_count,
+         COUNT(*) FILTER (WHERE bbq_requested)::int AS bbq_count,
+         COALESCE(SUM(total_price), 0)::int AS total_amount,
+         COALESCE(SUM(total_price - paid_amount), 0)::int AS unpaid_amount
+       FROM reservations
+       WHERE check_in >= $1::date AND check_in < ($1::date + interval '1 month')
+       GROUP BY pension_id`,
+      [monthStart]
+    );
+    const statsByPension = {};
+    statsRes.rows.forEach((row) => { statsByPension[row.pension_id] = row; });
+
+    const emptyStats = { team_count: 0, guest_count: 0, bbq_count: 0, total_amount: 0, unpaid_amount: 0 };
+
+    const pensions = pensionsRes.rows.map((p) => {
+      const s = statsByPension[p.id] || emptyStats;
+      return {
+        pension_id: p.id,
+        pension_name: p.name,
+        team_count: s.team_count,
+        guest_count: s.guest_count,
+        bbq_count: s.bbq_count,
+        total_amount: s.total_amount,
+        unpaid_amount: s.unpaid_amount,
+      };
+    });
+
+    const totals = pensions.reduce((acc, p) => ({
+      team_count: acc.team_count + p.team_count,
+      guest_count: acc.guest_count + p.guest_count,
+      bbq_count: acc.bbq_count + p.bbq_count,
+      total_amount: acc.total_amount + p.total_amount,
+      unpaid_amount: acc.unpaid_amount + p.unpaid_amount,
+    }), { ...emptyStats });
+
+    res.json({ year: Number(year), month: Number(month), pensions, totals });
+  } catch (err) {
+    console.error('정산 조회 오류:', err.message);
+    res.status(500).json({ success: false, message: '정산 조회 실패', error: err.message });
   }
 });
 

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정산 - 펜션 예약 관리</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>정산</h1>
+    <div class="header-actions">
+      <a href="/" class="header-link">달력으로</a>
+      <button id="logoutBtn" class="header-link-btn">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="settlement-section">
+    <div class="settlement-month-nav">
+      <button type="button" id="settlementPrevMonth">&lt;</button>
+      <span id="settlementMonthLabel" class="settlement-month-label"></span>
+      <button type="button" id="settlementNextMonth">&gt;</button>
+    </div>
+    <p class="settlement-note">각 방의 "체크인 날짜"가 해당 월에 속하는 예약을 기준으로 집계합니다.</p>
+
+    <div class="settlement-table-wrap">
+      <table class="settlement-table" id="settlementTable">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>이용 팀수</th>
+            <th>이용 인원수</th>
+            <th>바베큐 횟수</th>
+            <th>총 요금</th>
+            <th>미수령 금액</th>
+          </tr>
+        </thead>
+        <tbody id="settlementTableBody"></tbody>
+        <tfoot id="settlementTotalFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <script src="settlement.js"></script>
+</body>
+</html>
