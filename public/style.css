@@ -4,6 +4,10 @@ body {
   font-family: -apple-system, "Malgun Gothic", sans-serif;
   margin: 0;
   padding: 20px;
+  /* 홈 화면 앱으로 열었을 때 내용이 화면 맨 위(노치/상태바)에 딱 붙지 않도록 위쪽에
+     여유를 더 준다. env(safe-area-inset-top)은 노치가 있는 기기에서만 값이 붙고,
+     그 외에는 0이라 아래 16px만 기본으로 더해진다. */
+  padding-top: calc(20px + env(safe-area-inset-top, 0px) + 16px);
   background: #f7f7f8;
   color: #222;
 }
@@ -579,7 +583,10 @@ button.danger { background: #ff4a4a; color: white; border: none; }
 
 /* ===== 모바일 반응형 (~480px) ===== */
 @media (max-width: 480px) {
-  body { padding: 10px; }
+  body {
+    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px) + 16px);
+  }
   header h1 { font-size: 18px; }
   .header-link, .header-link-btn { font-size: 12px; padding: 5px 9px; }
 
