@@ -9,6 +9,8 @@ services:
       # 서버에 문제가 생기면: 이 컨테이너를 새로 올리고, 백업해둔 pgdata 폴더와 .env만
       # 그대로 넣어주면 된다 (아래 restore 명령 참고).
       - ./pgdata:/var/lib/postgresql/data
+      # 매일 새벽 자동 백업(JSON) 파일도 컨테이너 밖(호스트의 이 폴더)에 그대로 남긴다.
+      - ./backups:/app/backups
     ports:
       - "${APP_PORT:-3000}:3000"
       # Postgres에 호스트에서 직접 접속(psql, pg_dump 등)해야 하면 주석을 푸세요.

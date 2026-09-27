@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
+const { buildBackupData } = require('../backup');
 
 const VALID_ROLES = ['system', 'reservation', 'facility'];
 
@@ -128,49 +129,11 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/admins/backup - 전체 예약 데이터 백업(다운로드용 JSON)
-// 펜션(pensions)은 참고용으로만 포함하고, 예약/요금은 pension_id 대신 pension_name으로 저장해서
-// 나중에 복원할 때 DB의 펜션 id가 지금과 달라도(순서가 바뀌어도) 이름으로 다시 연결할 수 있게 한다.
-// 관리자 계정(admins)은 비밀번호 해시가 포함되므로 보안상 백업에서 제외한다.
+// 실제 백업 내용을 만드는 로직은 backup.js의 buildBackupData()로 빼서, 매일 새벽 자동
+// 백업(backup-scheduler.js)과 완전히 같은 로직/형식을 공유한다.
 router.get('/backup', async (req, res) => {
   try {
-    const pensionsResult = await pool.query('SELECT id, name FROM pensions ORDER BY id');
-    const pensionNameById = {};
-    pensionsResult.rows.forEach((p) => { pensionNameById[p.id] = p.name; });
-
-    const reservationsResult = await pool.query(
-      `SELECT pension_id, guest_name, phone, check_in, check_out, num_guests,
-              total_price, paid_amount, bbq_requested, memo, created_at, updated_at
-       FROM reservations ORDER BY check_in`
-    );
-    const dailyRatesResult = await pool.query(
-      'SELECT pension_id, date, price FROM daily_rates ORDER BY date'
-    );
-
-    const backup = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      pensions: pensionsResult.rows.map((p) => ({ name: p.name })),
-      reservations: reservationsResult.rows.map((r) => ({
-        pension_name: pensionNameById[r.pension_id],
-        guest_name: r.guest_name,
-        phone: r.phone,
-        check_in: r.check_in,
-        check_out: r.check_out,
-        num_guests: r.num_guests,
-        total_price: r.total_price,
-        paid_amount: r.paid_amount,
-        bbq_requested: r.bbq_requested,
-        memo: r.memo,
-        created_at: r.created_at,
-        updated_at: r.updated_at,
-      })),
-      dailyRates: dailyRatesResult.rows.map((d) => ({
-        pension_name: pensionNameById[d.pension_id],
-        date: d.date,
-        price: d.price,
-      })),
-    };
-
+    const backup = await buildBackupData();
     const filename = `pension-backup-${backup.exportedAt.slice(0, 10)}.json`;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

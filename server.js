@@ -10,6 +10,7 @@ const adminsRouter = require('./routes/admins');
 const pensionsRouter = require('./routes/pensions');
 const reservationsRouter = require('./routes/reservations');
 const dailyRatesRouter = require('./routes/dailyRates');
+const { scheduleDailyBackup } = require('./backup-scheduler');
 
 const app = express();
 app.use(express.json({ limit: '10mb' })); // 백업 복원 시 큰 JSON 파일을 받을 수 있도록 넉넉하게 설정
@@ -82,3 +83,6 @@ app.listen(PORT, () => {
   console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
   console.log(`   DB 연결 테스트: http://localhost:${PORT}/db-test`);
 });
+
+// 매일 새벽(기본 04:00) 예약/요금 데이터를 자동으로 백업 (backup-scheduler.js 참고)
+scheduleDailyBackup();
